@@ -1,0 +1,46 @@
+import { Injectable } from '@nestjs/common';
+import { ENV_CONFIG } from 'src/config';
+import { Logger } from 'src/shared/global';
+import { QUERY_CHALLENGES_TOOL_PARAMETERS } from 'src/mcp/tools/challenges/queryChallenges.parameters';
+import { z } from 'zod';
+
+const { TOPCODER_API_BASE_URL } = ENV_CONFIG;
+
+@Injectable()
+export class TopcoderChallengesService {
+  private readonly logger = new Logger(TopcoderChallengesService.name);
+
+  constructor() {}
+
+  async fetchChallenges(
+    queryParams: z.infer<typeof QUERY_CHALLENGES_TOOL_PARAMETERS>,
+    accessToken?: string,
+  ) {
+    // Format the input parameters
+    const url = new URL(`${TOPCODER_API_BASE_URL}/challenges`);
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, value.toString());
+      }
+    });
+
+    this.logger.debug(`Fetching challenges from: ${url.toString()}`);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'app-version': '2.0.0',
+    };
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    this.logger.debug(
+      `Fetching challenges with headers: ${JSON.stringify(headers)}`,
+    );
+
+    return fetch(url.toString(), {
+      method: 'GET',
+      headers,
+    });
+  }
+}
