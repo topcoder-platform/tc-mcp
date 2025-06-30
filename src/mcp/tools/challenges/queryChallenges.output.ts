@@ -162,6 +162,18 @@ export const QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA = z.object({
             .string()
             .optional()
             .describe('Submission end date (optional, ISO format)'),
+          winners: z
+            .array(
+              z.object({
+                handle: z
+                  .string()
+                  .describe('Winner handle on Topcoder platform'),
+                userId: z.string().describe('Unique identifier for the user'),
+                placement: z.number().describe('Placement of the winner'),
+              }),
+            )
+            .optional()
+            .describe('Array of winners for the challenge (optional)'),
         })
         .describe('Challenge object'),
     )

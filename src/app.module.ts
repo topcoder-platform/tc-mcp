@@ -20,27 +20,27 @@ import { APP_GUARD } from '@nestjs/core';
         sessionIdGenerator: () => randomUUID(),
         statelessMode: false,
       },
-      guards: [AuthGuard, RolesGuard],
+      // guards: [AuthGuard, RolesGuard],
     }),
     GlobalProvidersModule,
     TopcoderModule,
   ],
   controllers: [HealthCheckController],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RolesGuard,
+    // },
     QueryChallengesTool,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TokenValidatorMiddleware).forRoutes('*');
-    consumer.apply(CreateRequestStoreMiddleware).forRoutes('*');
+    // consumer.apply(TokenValidatorMiddleware).forRoutes('*');
+    // consumer.apply(CreateRequestStoreMiddleware).forRoutes('*');
   }
 }
