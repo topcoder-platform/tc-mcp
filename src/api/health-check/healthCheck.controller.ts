@@ -19,7 +19,7 @@ export class HealthCheckController {
 
   @Public()
   @Version([VERSION_NEUTRAL, '1'])
-  @Get('/healthcheck')
+  @Get('/health')
   healthCheck(): Promise<GetHealthCheckResponseDto> {
     const response = new GetHealthCheckResponseDto();
 

@@ -8,6 +8,9 @@ async function bootstrap() {
 
   const logger = new Logger('bootstrap()');
 
+  // Global prefix for all routes
+  app.setGlobalPrefix(ENV_CONFIG.API_BASE);
+
   // Add an event handler to log uncaught promise rejections and prevent the server from crashing
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection at:', promise, 'reason:', reason);

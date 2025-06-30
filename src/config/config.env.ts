@@ -16,4 +16,8 @@ export class ConfigEnv {
 
   @IsString()
   AUTH0_CLIENT_ID!: string;
+
+  @IsString()
+  @IsOptional()
+  API_BASE = '/v6/mcp';
 }
