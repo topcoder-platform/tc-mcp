@@ -1,11 +1,11 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { McpModule } from '@rekog/mcp-nest';
+import { McpModule } from '@tc/mcp-nest';
 import { QueryChallengesTool } from './mcp/tools/challenges/queryChallenges.tool';
-import { randomUUID } from 'crypto';
 import { GlobalProvidersModule } from './shared/global/globalProviders.module';
 import { TopcoderModule } from './shared/topcoder/topcoder.module';
 import { HealthCheckController } from './api/health-check/healthCheck.controller';
 import { TokenValidatorMiddleware } from './core/auth/middleware/tokenValidator.middleware';
+import { nanoid } from 'nanoid';
 
 @Module({
   imports: [
@@ -14,7 +14,7 @@ import { TokenValidatorMiddleware } from './core/auth/middleware/tokenValidator.
       version: '1.0.0',
       streamableHttp: {
         enableJsonResponse: false,
-        sessionIdGenerator: () => randomUUID(),
+        sessionIdGenerator: () => nanoid(),
         statelessMode: false,
       },
     }),

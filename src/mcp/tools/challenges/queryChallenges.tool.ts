@@ -1,6 +1,5 @@
-// greeting.tool.ts
 import { Injectable, Inject, UseGuards } from '@nestjs/common';
-import { Tool } from '@rekog/mcp-nest';
+import { Tool } from '@tc/mcp-nest';
 import { REQUEST } from '@nestjs/core';
 import { QUERY_CHALLENGES_TOOL_PARAMETERS } from './queryChallenges.parameters';
 import { TopcoderChallengesService } from 'src/shared/topcoder/challenges.service';
