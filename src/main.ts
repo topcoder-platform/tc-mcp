@@ -4,7 +4,9 @@ import { Logger } from 'src/shared/global';
 import { ENV_CONFIG } from './config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
 
   const logger = new Logger('bootstrap()');
 

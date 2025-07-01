@@ -1,11 +1,12 @@
 // greeting.tool.ts
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, UseGuards } from '@nestjs/common';
 import { Tool } from '@rekog/mcp-nest';
 import { REQUEST } from '@nestjs/core';
 import { QUERY_CHALLENGES_TOOL_PARAMETERS } from './queryChallenges.parameters';
 import { TopcoderChallengesService } from 'src/shared/topcoder/challenges.service';
 import { Logger } from 'src/shared/global';
 import { QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA } from './queryChallenges.output';
+import { AuthGuard } from 'src/core/auth/guards';
 
 @Injectable()
 export class QueryChallengesTool {
@@ -27,6 +28,7 @@ export class QueryChallengesTool {
       readOnlyHint: true,
     },
   })
+  @UseGuards(AuthGuard)
   async queryChallenges(params) {
     // Validate the input parameters
     const validatedParams = QUERY_CHALLENGES_TOOL_PARAMETERS.safeParse(params);
