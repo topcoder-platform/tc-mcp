@@ -1,16 +1,25 @@
 import * as jwt from 'jsonwebtoken';
-// import { UnauthorizedException } from '@nestjs/common';
 import { Logger } from 'src/shared/global';
 import { getSigningKey } from '../jwt';
 
 const logger = new Logger('guards.utils()');
 
-export const decode = async (authHeader: string) => {
+/**
+ * Decodes and verifies a JWT token from the provided authorization header.
+ *
+ * @param authHeader - The authorization header containing the token, expected in the format "Bearer <token>".
+ * @returns A promise that resolves to the decoded JWT payload if the token is valid,
+ *          a string if the payload is a string, or `false` if the token is invalid or the header is improperly formatted.
+ *
+ * @throws This function does not throw directly but will return `false` if an error occurs during verification.
+ */
+export const decodeAuthToken = async (
+  authHeader: string,
+): Promise<boolean | jwt.JwtPayload | string> => {
   const [type, idToken] = authHeader?.split(' ') ?? [];
 
   if (type !== 'Bearer' || !idToken) {
     return false;
-    // throw new UnauthorizedException('Missing Authorization header!');
   }
 
   let decoded: jwt.JwtPayload | string;
@@ -20,7 +29,6 @@ export const decode = async (authHeader: string) => {
   } catch (error) {
     logger.error('Error verifying JWT', error);
     return false;
-    // throw new UnauthorizedException('Invalid or expired JWT!');
   }
 
   return decoded;
