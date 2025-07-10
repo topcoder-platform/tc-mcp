@@ -5,8 +5,8 @@ on: issue_comment
 jobs:
   pr_commented:
     # This job only runs for pull request comments
-    name: TC Action Agent - Do It - PR comment
-    if: ${{ github.event.issue.pull_request }}
+    name: '[PR Comment] - Use TC AI Agent'
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '@tc-ai') }}
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -14,13 +14,13 @@ jobs:
         env:
           NUMBER: ${{ github.event.issue.number }}
 
-  issue_commented:
-    # This job only runs for issue comments
-    name: TC Action Agent - Do It - Issue comment
-    if: ${{ !github.event.issue.pull_request }}
+  tc_agent_tagged_in_issue_comment:
+    # This job only runs for issue comments where the agent is tagged with @tc-ai
+    name: '[Issue Comment] - Use TC AI Agent'
+    if: ${{ !github.event.issue.pull_request && contains(github.event.comment.body, '@tc-ai') }}
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo A comment on issue $NUMBER
-        env:
-          NUMBER: ${{ github.event.issue.number }}
+      - name: Call TC AI Agent
+        uses: topcoder-platform/tc-action-agent@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
