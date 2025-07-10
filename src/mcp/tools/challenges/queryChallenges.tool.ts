@@ -54,6 +54,11 @@ export class QueryChallengesTool {
         this.logger.error(
           `Failed to fetch challenges from Topcoder API: ${challenges.statusText}`,
         );
+        try {
+          this.logger.error(await challenges.json());
+        } catch (e) {
+          this.logger.error('Failed to log challenge error');
+        }
 
         // Return an error response if the API call fails
         return {
@@ -108,7 +113,7 @@ export class QueryChallengesTool {
         },
       };
     } catch (error) {
-      this.logger.error(`Error fetching challenges: ${error.message}`);
+      this.logger.error(`Error fetching challenges: ${error.message}`, error);
       return {
         content: [
           {
