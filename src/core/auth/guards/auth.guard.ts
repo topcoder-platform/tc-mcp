@@ -1,17 +1,16 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Logger } from 'src/shared/global';
+import { Request } from 'express';
+import { decodeAuthToken } from './guards.utils';
 
-@Injectable()
-export class AuthGuard implements CanActivate {
-  private readonly logger = new Logger(AuthGuard.name);
-
-  constructor(private reflector: Reflector) {}
-
-  canActivate(context: ExecutionContext): boolean {
-    this.logger.log('AuthGuard canActivate called...');
-    // Check if the route is marked as public...
-
-    return true;
+/**
+ * Auth guard function to validate the authorization token from the request headers.
+ *
+ * @param req - The incoming HTTP request object.
+ * @returns A promise that resolves to `true` if the authorization token is valid, otherwise `false`.
+ */
+export const authGuard = async (req: Request) => {
+  if (!(await decodeAuthToken(req.headers.authorization ?? ''))) {
+    return false;
   }
-}
+
+  return true;
+};
