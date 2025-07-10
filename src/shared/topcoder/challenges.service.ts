@@ -24,7 +24,7 @@ export class TopcoderChallengesService {
       }
     });
 
-    this.logger.debug(`Fetching challenges from: ${url.toString()}`);
+    this.logger.log(`Fetching challenges from: ${url.toString()}`);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export class TopcoderChallengesService {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    this.logger.debug(
+    this.logger.log(
       `Fetching challenges with headers: ${JSON.stringify(headers)}`,
     );
 
