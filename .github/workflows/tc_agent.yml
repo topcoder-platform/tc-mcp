@@ -1,22 +1,26 @@
-name: TC Action Agent
+name: TC Action Agent - Do It
 
-on:
-  issue_comment:
-    types:
-      - created
-
-permissions:
-  pull-requests: write
+on: issue_comment
 
 jobs:
-  tc-acion-agent:
+  pr_commented:
+    # This job only runs for pull request comments
+    name: TC Action Agent - Do It - PR comment
+    if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - run: |
+          echo A comment on PR $NUMBER
+        env:
+          NUMBER: ${{ github.event.issue.number }}
 
-      - name: TC Action Agent
-        uses: topcoder-platform/tc-action-agent@master
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # The GITHUB_TOKEN is there by default so you just need to keep it like it is and not necessarily need to add it as secret as it will throw an error. [More Details](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret)
+  issue_commented:
+    # This job only runs for issue comments
+    name: TC Action Agent - Do It - Issue comment
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo A comment on issue $NUMBER
+        env:
+          NUMBER: ${{ github.event.issue.number }}
