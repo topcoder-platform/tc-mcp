@@ -1,12 +1,8 @@
-name: TC Action Agent
+name: TC Action Agent - Do It
 
 on:
   issue_comment:
-    types:
-      - created
-
-permissions:
-  pull-requests: write
+    types: [created, edited]
 
 jobs:
   tc-acion-agent:
