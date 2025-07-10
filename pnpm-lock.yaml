@@ -20,9 +20,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.1
         version: 11.1.3(@nestjs/common@11.1.3(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.3)
-      '@rekog/mcp-nest':
-        specifier: ^1.6.2
-        version: 1.6.2(@modelcontextprotocol/sdk@1.13.0)(@nestjs/common@11.1.3(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.3)(express@5.1.0)(reflect-metadata@0.2.2)(zod-to-json-schema@3.24.5(zod@3.25.67))(zod@3.25.67)
+      '@tc/mcp-nest':
+        specifier: topcoder-platform/MCP-Nest.git
+        version: '@rekog/mcp-nest@https://codeload.github.com/topcoder-platform/MCP-Nest/tar.gz/8950083c999f7636fed9f62b26330748aed9ed30(@modelcontextprotocol/sdk@1.13.0)(@nestjs/common@11.1.3(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.3)(express@5.1.0)(reflect-metadata@0.2.2)(zod-to-json-schema@3.24.5(zod@3.25.67))(zod@3.25.67)'
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -842,8 +842,9 @@ packages:
     resolution: {integrity: sha512-YLT9Zo3oNPJoBjBc4q8G2mjU4tqIbf5CEOORbUUr48dCD9q3umJ3IPlVqOqDakPfd2HuwccBaqlGhN4Gmr5OWg==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@rekog/mcp-nest@1.6.2':
-    resolution: {integrity: sha512-swcu99a/woQ5T1f4E/YJct1w/xzszH83bhzEuZwXh+cYRnQUJKhaJd5Aey/XyOtt/D9lQTKSdnoKdpija8kuWA==}
+  '@rekog/mcp-nest@https://codeload.github.com/topcoder-platform/MCP-Nest/tar.gz/8950083c999f7636fed9f62b26330748aed9ed30':
+    resolution: {tarball: https://codeload.github.com/topcoder-platform/MCP-Nest/tar.gz/8950083c999f7636fed9f62b26330748aed9ed30}
+    version: 1.6.2
     peerDependencies:
       '@modelcontextprotocol/sdk': '>=1.10.0'
       '@nestjs/common': '>=9.0.0'
@@ -4386,7 +4387,7 @@ snapshots:
 
   '@pkgr/core@0.2.7': {}
 
-  '@rekog/mcp-nest@1.6.2(@modelcontextprotocol/sdk@1.13.0)(@nestjs/common@11.1.3(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.3)(express@5.1.0)(reflect-metadata@0.2.2)(zod-to-json-schema@3.24.5(zod@3.25.67))(zod@3.25.67)':
+  '@rekog/mcp-nest@https://codeload.github.com/topcoder-platform/MCP-Nest/tar.gz/8950083c999f7636fed9f62b26330748aed9ed30(@modelcontextprotocol/sdk@1.13.0)(@nestjs/common@11.1.3(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.3)(express@5.1.0)(reflect-metadata@0.2.2)(zod-to-json-schema@3.24.5(zod@3.25.67))(zod@3.25.67)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.13.0
       '@nestjs/common': 11.1.3(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
