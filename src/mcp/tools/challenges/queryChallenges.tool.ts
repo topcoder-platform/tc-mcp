@@ -50,12 +50,12 @@ export class QueryChallengesTool {
         accessToken,
       );
 
-      if (!challenges.ok) {
+      if (challenges.status < 200 || challenges.status >= 300) {
         this.logger.error(
           `Failed to fetch challenges from Topcoder API: ${challenges.statusText}`,
         );
         try {
-          this.logger.error(await challenges.json());
+          this.logger.error(challenges.data);
         } catch (e) {
           this.logger.error('Failed to log challenge error');
         }
@@ -63,52 +63,52 @@ export class QueryChallengesTool {
         // Return an error response if the API call fails
         return {
           content: [
-            {
-              type: 'text',
-              text: `Error fetching challenges: ${challenges.statusText}`,
-            },
+        {
+          type: 'text',
+          text: `Error fetching challenges: ${challenges.statusText}`,
+        },
           ],
           isError: true,
         };
       }
 
-      // Parse the response as JSON
-      const challengesData = await challenges.json();
+      // Axios response: data is already parsed, headers are plain object
+      const challengesData = challenges.data;
 
       return {
         content: [
           {
-            type: 'text',
-            text: JSON.stringify({
-              page: Number(challenges.headers.get('x-page')) || 1,
-              pageSize:
-                Number(challenges.headers.get('x-per-page')) ||
-                challengesData.length ||
-                0,
-              total:
-                Number(challenges.headers.get('x-total')) ||
-                challengesData.length ||
-                0,
-              nextPage: challenges.headers.get('x-next-page')
-                ? Number(challenges.headers.get('x-next-page'))
-                : null,
-              data: challengesData,
-            }),
+        type: 'text',
+        text: JSON.stringify({
+          page: Number(challenges.headers['x-page']) || 1,
+          pageSize:
+            Number(challenges.headers['x-per-page']) ||
+            (Array.isArray(challengesData) ? challengesData.length : 0) ||
+            0,
+          total:
+            Number(challenges.headers['x-total']) ||
+            (Array.isArray(challengesData) ? challengesData.length : 0) ||
+            0,
+          nextPage: challenges.headers['x-next-page']
+            ? Number(challenges.headers['x-next-page'])
+            : null,
+          data: challengesData,
+        }),
           },
         ],
         structuredContent: {
-          page: Number(challenges.headers.get('x-page')) || 1,
+          page: Number(challenges.headers['x-page']) || 1,
           pageSize:
-            Number(challenges.headers.get('x-per-page')) ||
-            challengesData.length ||
-            0,
+        Number(challenges.headers['x-per-page']) ||
+        (Array.isArray(challengesData) ? challengesData.length : 0) ||
+        0,
           total:
-            Number(challenges.headers.get('x-total')) ||
-            challengesData.length ||
-            0,
-          nextPage: challenges.headers.get('x-next-page')
-            ? Number(challenges.headers.get('x-next-page'))
-            : null,
+        Number(challenges.headers['x-total']) ||
+        (Array.isArray(challengesData) ? challengesData.length : 0) ||
+        0,
+          nextPage: challenges.headers['x-next-page']
+        ? Number(challenges.headers['x-next-page'])
+        : null,
           data: challengesData,
         },
       };

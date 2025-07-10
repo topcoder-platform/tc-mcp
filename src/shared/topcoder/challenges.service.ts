@@ -3,6 +3,7 @@ import { ENV_CONFIG } from 'src/config';
 import { Logger } from 'src/shared/global';
 import { QUERY_CHALLENGES_TOOL_PARAMETERS } from 'src/mcp/tools/challenges/queryChallenges.parameters';
 import { z } from 'zod';
+import axios from 'axios';
 
 const { TOPCODER_API_BASE_URL } = ENV_CONFIG;
 
@@ -40,10 +41,8 @@ export class TopcoderChallengesService {
     );
 
     try {
-      return await fetch(stringUrl, {
-        method: 'GET',
-        headers,
-      });
+      const response = await axios.get(stringUrl, { headers });
+      return response;
     } catch (error) {
       this.logger.error(`Error fetching challenges: ${JSON.stringify(error)}`, error);
       throw error;
