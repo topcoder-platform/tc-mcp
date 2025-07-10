@@ -24,7 +24,8 @@ export class TopcoderChallengesService {
       }
     });
 
-    this.logger.log(`Fetching challenges from: ${url.toString()}`);
+    const stringUrl = url.toString();
+    this.logger.log(`Fetching challenges from: "${stringUrl}"`);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -35,12 +36,17 @@ export class TopcoderChallengesService {
     }
 
     this.logger.log(
-      `Fetching challenges with headers: ${JSON.stringify(headers)}`,
+      `Fetching challenges with headers: "${JSON.stringify(headers)}"`,
     );
 
-    return fetch(url.toString(), {
-      method: 'GET',
-      headers,
-    });
+    try {
+      return await fetch(stringUrl, {
+        method: 'GET',
+        headers,
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching challenges: ${JSON.stringify(error)}`, error);
+      throw error;
+    }
   }
 }
