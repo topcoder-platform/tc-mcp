@@ -5,12 +5,6 @@ import { QUERY_CHALLENGES_TOOL_PARAMETERS } from './queryChallenges.parameters';
 import { TopcoderChallengesService } from 'src/shared/topcoder/challenges.service';
 import { Logger } from 'src/shared/global';
 import { QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA } from './queryChallenges.output';
-import {
-  authGuard,
-  checkHasUserRole,
-  checkM2MScope,
-} from 'src/core/auth/guards';
-import { M2mScope, Role } from 'src/core/auth/auth.constants';
 
 @Injectable()
 export class QueryChallengesTool {
@@ -127,61 +121,13 @@ export class QueryChallengesTool {
   }
 
   @Tool({
-    name: 'query-tc-challenges-private',
+    name: 'query-tc-challenges',
     description:
       'Returns a list of Topcoder challenges based on the query parameters.',
     parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
     outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
     annotations: {
-      title: 'Query Public Topcoder Challenges',
-      readOnlyHint: true,
-    },
-    canActivate: authGuard,
-  })
-  async queryChallengesPrivate(params) {
-    return this._queryChallenges(params);
-  }
-
-  @Tool({
-    name: 'query-tc-challenges-protected',
-    description:
-      'Returns a list of Topcoder challenges based on the query parameters.',
-    parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
-    outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
-    annotations: {
-      title: 'Query Public Topcoder Challenges',
-      readOnlyHint: true,
-    },
-    canActivate: checkHasUserRole(Role.Admin),
-  })
-  async queryChallengesProtected(params) {
-    return this._queryChallenges(params);
-  }
-
-  @Tool({
-    name: 'query-tc-challenges-m2m',
-    description:
-      'Returns a list of Topcoder challenges based on the query parameters.',
-    parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
-    outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
-    annotations: {
-      title: 'Query Public Topcoder Challenges',
-      readOnlyHint: true,
-    },
-    canActivate: checkM2MScope(M2mScope.QueryPublicChallenges),
-  })
-  async queryChallengesM2m(params) {
-    return this._queryChallenges(params);
-  }
-
-  @Tool({
-    name: 'query-tc-challenges-public',
-    description:
-      'Returns a list of public Topcoder challenges based on the query parameters.',
-    parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
-    outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
-    annotations: {
-      title: 'Query Public Topcoder Challenges',
+      title: 'Query Topcoder Challenges',
       readOnlyHint: true,
     },
   })
