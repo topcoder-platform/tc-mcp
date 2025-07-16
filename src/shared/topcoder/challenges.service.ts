@@ -21,7 +21,11 @@ export class TopcoderChallengesService {
     const url = new URL(`${TOPCODER_API_BASE_URL}/challenges`);
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        url.searchParams.append(key, value.toString());
+        if (Array.isArray(value)) {
+          value.forEach((v) => url.searchParams.append(key, v));
+        } else {
+          url.searchParams.append(key, value.toString());
+        }
       }
     });
 
