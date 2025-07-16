@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Logger } from 'src/shared/global';
 
 const SPEC_URL =
-  'https://raw.githubusercontent.com/topcoder-platform/member-api-v6/refs/heads/develop/docs/swagger.yaml';
+  'https://raw.githubusercontent.com/topcoder-platform/challenge-api-v6/refs/heads/develop/docs/swagger.yaml';
 
 @Injectable()
 export class ChallengesApiSwaggerResource {
