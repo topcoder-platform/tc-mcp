@@ -22,5 +22,3 @@ jobs:
     steps:
       - name: Call TC AI Agent
         uses: topcoder-platform/tc-action-agent@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
