@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import * as jwt from 'jsonwebtoken';
 import { Logger } from 'src/shared/global';
 import { getSigningKey } from '../jwt';

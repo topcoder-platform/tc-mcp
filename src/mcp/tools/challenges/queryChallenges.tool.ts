@@ -57,16 +57,16 @@ export class QueryChallengesTool {
         try {
           this.logger.error(challenges.data);
         } catch (e) {
-          this.logger.error('Failed to log challenge error');
+          this.logger.error('Failed to log challenge error', e);
         }
 
         // Return an error response if the API call fails
         return {
           content: [
-        {
-          type: 'text',
-          text: `Error fetching challenges: ${challenges.statusText}`,
-        },
+            {
+              type: 'text',
+              text: `Error fetching challenges: ${challenges.statusText}`,
+            },
           ],
           isError: true,
         };
@@ -78,8 +78,25 @@ export class QueryChallengesTool {
       return {
         content: [
           {
-        type: 'text',
-        text: JSON.stringify({
+            type: 'text',
+            text: JSON.stringify({
+              page: Number(challenges.headers['x-page']) || 1,
+              pageSize:
+                Number(challenges.headers['x-per-page']) ||
+                (Array.isArray(challengesData) ? challengesData.length : 0) ||
+                0,
+              total:
+                Number(challenges.headers['x-total']) ||
+                (Array.isArray(challengesData) ? challengesData.length : 0) ||
+                0,
+              nextPage: challenges.headers['x-next-page']
+                ? Number(challenges.headers['x-next-page'])
+                : null,
+              data: challengesData,
+            }),
+          },
+        ],
+        structuredContent: {
           page: Number(challenges.headers['x-page']) || 1,
           pageSize:
             Number(challenges.headers['x-per-page']) ||
@@ -92,23 +109,6 @@ export class QueryChallengesTool {
           nextPage: challenges.headers['x-next-page']
             ? Number(challenges.headers['x-next-page'])
             : null,
-          data: challengesData,
-        }),
-          },
-        ],
-        structuredContent: {
-          page: Number(challenges.headers['x-page']) || 1,
-          pageSize:
-        Number(challenges.headers['x-per-page']) ||
-        (Array.isArray(challengesData) ? challengesData.length : 0) ||
-        0,
-          total:
-        Number(challenges.headers['x-total']) ||
-        (Array.isArray(challengesData) ? challengesData.length : 0) ||
-        0,
-          nextPage: challenges.headers['x-next-page']
-        ? Number(challenges.headers['x-next-page'])
-        : null,
           data: challengesData,
         },
       };
@@ -129,7 +129,7 @@ export class QueryChallengesTool {
   @Tool({
     name: 'query-tc-challenges-private',
     description:
-      'Returns a list of public Topcoder challenges based on the query parameters.',
+      'Returns a list of Topcoder challenges based on the query parameters.',
     parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
     outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
     annotations: {
@@ -145,7 +145,7 @@ export class QueryChallengesTool {
   @Tool({
     name: 'query-tc-challenges-protected',
     description:
-      'Returns a list of public Topcoder challenges based on the query parameters.',
+      'Returns a list of Topcoder challenges based on the query parameters.',
     parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
     outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
     annotations: {
@@ -161,7 +161,7 @@ export class QueryChallengesTool {
   @Tool({
     name: 'query-tc-challenges-m2m',
     description:
-      'Returns a list of public Topcoder challenges based on the query parameters.',
+      'Returns a list of Topcoder challenges based on the query parameters.',
     parameters: QUERY_CHALLENGES_TOOL_PARAMETERS,
     outputSchema: QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA,
     annotations: {
@@ -185,7 +185,7 @@ export class QueryChallengesTool {
       readOnlyHint: true,
     },
   })
-  async queryChallengesPublic(params) {
+  async queryChallenges(params) {
     return this._queryChallenges(params);
   }
 }

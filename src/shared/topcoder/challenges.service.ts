@@ -44,7 +44,10 @@ export class TopcoderChallengesService {
       const response = await axios.get(stringUrl, { headers });
       return response;
     } catch (error) {
-      this.logger.error(`Error fetching challenges: ${JSON.stringify(error)}`, error);
+      this.logger.error(
+        `Error fetching challenges: ${JSON.stringify(error)}`,
+        error,
+      );
       throw error;
     }
   }

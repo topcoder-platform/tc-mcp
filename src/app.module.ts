@@ -1,11 +1,11 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { McpModule } from '@tc/mcp-nest';
-import { QueryChallengesTool } from './mcp/tools/challenges/queryChallenges.tool';
-import { GlobalProvidersModule } from './shared/global/globalProviders.module';
-import { TopcoderModule } from './shared/topcoder/topcoder.module';
 import { HealthCheckController } from './api/health-check/healthCheck.controller';
 import { TokenValidatorMiddleware } from './core/auth/middleware/tokenValidator.middleware';
 import { nanoid } from 'nanoid';
+import { ToolsModule } from './mcp/tools/tools.module';
+import { GlobalProvidersModule } from './shared/global/globalProviders.module';
+import { ResourcesModule } from './mcp/resources/resources.module';
 
 @Module({
   imports: [
@@ -19,10 +19,11 @@ import { nanoid } from 'nanoid';
       },
     }),
     GlobalProvidersModule,
-    TopcoderModule,
+    ToolsModule,
+    ResourcesModule,
   ],
   controllers: [HealthCheckController],
-  providers: [QueryChallengesTool],
+  providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
