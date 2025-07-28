@@ -25,6 +25,7 @@ export const QUERY_SKILLS_TOOL_OUTPUT_SCHEMA = z.object({
               name: z.string().describe('Category name'),
               description: z
                 .string()
+                .nullable()
                 .optional()
                 .describe('Detailed description of the category'),
             })
