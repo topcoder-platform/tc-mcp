@@ -12,8 +12,8 @@ export const QUERY_SKILLS_TOOL_PARAMETERS = z.object({
   sortBy: z
     .enum(['name', 'description', 'created_at', 'updated_at'])
     .optional()
-    .describe('Sort challenges by a specific field'),
-  sortOrder: z.enum(['asc', 'desc']).optional().describe('Sort order'),
+    .describe('Sort skills by a specific field'),
+  sortOrder: z.enum(['ASC', 'DESC']).optional().describe('Sort order'),
   page: z
     .number()
     .gte(1)
