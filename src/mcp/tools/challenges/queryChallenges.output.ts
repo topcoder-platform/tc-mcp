@@ -295,11 +295,11 @@ export const QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA = z.object({
                 .string()
                 .optional()
                 .describe('Identifier of the predecessor phase (optional)'),
-              additionalProperties: z
-                .object({})
+              actualEndDate: z
+                .string()
                 .optional()
                 .describe(
-                  'Additional properties for the current phase (optional)',
+                  'Actual end date of the current phase (ISO format, optional)',
                 ),
             })
             .optional()
