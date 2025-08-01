@@ -241,7 +241,7 @@ export const QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA = z.object({
                 handle: z
                   .string()
                   .describe('Winner handle on Topcoder platform'),
-                userId: z.string().describe('Unique identifier for the user'),
+                userId: z.number().describe('Unique identifier for the user'),
                 placement: z.number().describe('Placement of the winner'),
               }),
             )
@@ -295,6 +295,12 @@ export const QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA = z.object({
                 .string()
                 .optional()
                 .describe('Identifier of the predecessor phase (optional)'),
+              additionalProperties: z
+                .object({})
+                .optional()
+                .describe(
+                  'Additional properties for the current phase (optional)',
+                ),
             })
             .optional()
             .describe('Current phase of the challenge (optional)'),
@@ -341,6 +347,20 @@ export const QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA = z.object({
             .describe(
               'Number of checkpoint submissions for the challenge (optional)',
             ),
+          task: z
+            .object({
+              isTask: z
+                .boolean()
+                .describe('Indicates if the challenge is a task'),
+              isAssigned: z
+                .boolean()
+                .describe('Indicates if the task is assigned'),
+              memberId: z
+                .number()
+                .describe('Member ID of the assigned user (optional)'),
+            })
+            .optional()
+            .describe('Task information for the challenge (optional)'),
         })
         .describe('Challenge object'),
     )
