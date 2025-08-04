@@ -205,6 +205,10 @@ export const QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA = z.object({
             .object({
               totalPrizes: z.number().describe('Total prize amount'),
               type: z.string().optional().describe('Challenge prizes currency'),
+              totalPrizesInCents: z
+                .number()
+                .optional()
+                .describe('Total prize amount in cents'),
             })
             .describe('Overview of the challenge'),
           skills: z
