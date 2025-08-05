@@ -22,7 +22,7 @@ export class TopcoderChallengesService {
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
-          value.forEach((v) => url.searchParams.append(key, v));
+          value.forEach((v) => url.searchParams.append(`${key}[]`, v));
         } else {
           url.searchParams.append(key, value.toString());
         }
