@@ -3,7 +3,7 @@ import { Resource } from '@tc/mcp-nest';
 import axios from 'axios';
 import { Logger } from 'src/shared/global';
 
-const SPEC_URL = 'https://api.topcoder-dev.com/v5/review/api-docs-yaml';
+const SPEC_URL = 'https://api.topcoder-dev.com/v6/review/api-docs-yaml';
 
 @Injectable()
 export class ReviewApiSwaggerResource {
