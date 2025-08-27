@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Resource } from '@tc/mcp-nest';
 import axios from 'axios';
 import { Logger } from 'src/shared/global';
+import { LogTime } from 'src/shared/global/logTime.decorator';
 
 const SPEC_URL =
   'https://raw.githubusercontent.com/topcoder-platform/identity-api-v6/refs/heads/develop/doc/swagger.yaml';
@@ -16,6 +17,7 @@ export class IdentityApiSwaggerResource {
     description: 'Swagger documentation for the Identity V6 API',
     mimeType: 'text/yaml',
   })
+  @LogTime('IdentityApiSwaggerResource')
   async getIdentityApiSwagger() {
     this.logger.debug('Fetching Identity V6 API Swagger');
     // Fetch the content from the URI and return it.

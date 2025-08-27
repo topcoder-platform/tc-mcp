@@ -6,6 +6,7 @@ import { ToolsModule } from './mcp/tools/tools.module';
 import { GlobalProvidersModule } from './shared/global/globalProviders.module';
 import { ResourcesModule } from './mcp/resources/resources.module';
 import { randomUUID } from 'crypto';
+import { TimingInterceptorMiddleware } from './shared/global/timingInterceptor';
 
 @Module({
   imports: [
@@ -28,5 +29,6 @@ import { randomUUID } from 'crypto';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(TokenValidatorMiddleware).forRoutes('*');
+    consumer.apply(TimingInterceptorMiddleware).forRoutes('*');
   }
 }

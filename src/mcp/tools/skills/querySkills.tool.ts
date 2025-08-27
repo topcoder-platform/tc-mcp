@@ -5,6 +5,7 @@ import { Logger } from 'src/shared/global';
 import { QUERY_SKILLS_TOOL_PARAMETERS } from './querySkills.parameters';
 import { QUERY_SKILLS_TOOL_OUTPUT_SCHEMA } from './querySkills.output';
 import { TopcoderSkillsService } from 'src/shared/topcoder/skills.service';
+import { LogTime } from 'src/shared/global/logTime.decorator';
 
 @Injectable()
 export class QuerySkillsTool {
@@ -125,6 +126,7 @@ export class QuerySkillsTool {
       readOnlyHint: true,
     },
   })
+  @LogTime('SkillsTool')
   async querySkills(params) {
     return this._querySkills(params);
   }

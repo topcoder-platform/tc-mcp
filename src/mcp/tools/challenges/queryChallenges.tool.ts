@@ -5,6 +5,7 @@ import { QUERY_CHALLENGES_TOOL_PARAMETERS } from './queryChallenges.parameters';
 import { TopcoderChallengesService } from 'src/shared/topcoder/challenges.service';
 import { Logger } from 'src/shared/global';
 import { QUERY_CHALLENGES_TOOL_OUTPUT_SCHEMA } from './queryChallenges.output';
+import { LogTime } from 'src/shared/global/logTime.decorator';
 
 @Injectable()
 export class QueryChallengesTool {
@@ -131,6 +132,7 @@ export class QueryChallengesTool {
       readOnlyHint: true,
     },
   })
+  @LogTime('ChallengesTool')
   async queryChallenges(params) {
     return this._queryChallenges(params);
   }
