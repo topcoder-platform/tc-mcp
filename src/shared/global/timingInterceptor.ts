@@ -10,13 +10,14 @@ export class TimingInterceptorMiddleware implements NestMiddleware {
     const { method, originalUrl: url } = request;
     const start = Date.now();
     const mcpMethod = request.body?.method;
-    
+    const mcpToolName = request.body?.params?.name
+
     response.on('close', () => {
       const { statusCode } = response;
       const duration = Date.now() - start;
 
       this.logger.log(
-        `${method} ${mcpMethod ? `{${mcpMethod}} ` : ''}${url} ${statusCode} took ${duration}ms`
+        `${method} ${mcpMethod ? `{${mcpMethod}}${mcpToolName ? `(${mcpToolName}) ` : ''}` : ''}${url} ${statusCode} took ${duration}ms`
       );
     });
 
