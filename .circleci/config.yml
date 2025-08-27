@@ -80,6 +80,7 @@ workflows:
           branches:
             only:
             - dev
+            - add-timing-logging
 
     - "build-qa":
         context: org-global
