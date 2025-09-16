@@ -4,9 +4,14 @@ import { Logger } from 'src/shared/global';
 import { ENV_CONFIG } from './config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'],
+  });
 
   const logger = new Logger('bootstrap()');
+
+  // Global prefix for all routes
+  app.setGlobalPrefix(ENV_CONFIG.API_BASE);
 
   // Add an event handler to log uncaught promise rejections and prevent the server from crashing
   process.on('unhandledRejection', (reason, promise) => {

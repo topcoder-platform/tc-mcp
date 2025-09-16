@@ -1,14 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { McpModule } from '@rekog/mcp-nest';
-import { QueryChallengesTool } from './mcp/tools/challenges/queryChallenges.tool';
-import { randomUUID } from 'crypto';
-import { GlobalProvidersModule } from './shared/global/globalProviders.module';
-import { TopcoderModule } from './shared/topcoder/topcoder.module';
+import { McpModule } from '@tc/mcp-nest';
 import { HealthCheckController } from './api/health-check/healthCheck.controller';
 import { TokenValidatorMiddleware } from './core/auth/middleware/tokenValidator.middleware';
-import { CreateRequestStoreMiddleware } from './core/request/createRequestStore.middleware';
-import { AuthGuard, RolesGuard } from './core/auth/guards';
-import { APP_GUARD } from '@nestjs/core';
+import { ToolsModule } from './mcp/tools/tools.module';
+import { GlobalProvidersModule } from './shared/global/globalProviders.module';
+import { ResourcesModule } from './mcp/resources/resources.module';
+import { randomUUID } from 'crypto';
+import { TimingInterceptorMiddleware } from './shared/global/timingInterceptor';
 
 @Module({
   imports: [
@@ -20,27 +18,17 @@ import { APP_GUARD } from '@nestjs/core';
         sessionIdGenerator: () => randomUUID(),
         statelessMode: false,
       },
-      // guards: [AuthGuard, RolesGuard],
     }),
     GlobalProvidersModule,
-    TopcoderModule,
+    ToolsModule,
+    ResourcesModule,
   ],
   controllers: [HealthCheckController],
-  providers: [
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: AuthGuard,
-    // },
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: RolesGuard,
-    // },
-    QueryChallengesTool,
-  ],
+  providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // consumer.apply(TokenValidatorMiddleware).forRoutes('*');
-    // consumer.apply(CreateRequestStoreMiddleware).forRoutes('*');
+    consumer.apply(TokenValidatorMiddleware).forRoutes('*');
+    consumer.apply(TimingInterceptorMiddleware).forRoutes('*');
   }
 }

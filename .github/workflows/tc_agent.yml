@@ -1,0 +1,24 @@
+name: TC Action Agent - Do It
+
+on: issue_comment
+
+jobs:
+  pr_commented:
+    # This job only runs for pull request comments
+    name: '[PR Comment] - Use TC AI Agent'
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '@tc-ai') }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo A comment on PR $NUMBER
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+
+  tc_agent_tagged_in_issue_comment:
+    # This job only runs for issue comments where the agent is tagged with @tc-ai
+    name: '[Issue Comment] - Use TC AI Agent'
+    if: ${{ !github.event.issue.pull_request && contains(github.event.comment.body, '@tc-ai') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call TC AI Agent
+        uses: topcoder-platform/tc-action-agent@master

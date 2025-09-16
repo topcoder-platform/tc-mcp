@@ -36,6 +36,12 @@ export const QUERY_CHALLENGES_TOOL_PARAMETERS = z.object({
     .describe(
       'Filter by tag name, case-insensitive, partial matches are allowed.',
     ),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Filter by multiple tag names, case-insensitive, partial matches are allowed.',
+    ),
   search: z
     .string()
     .optional()

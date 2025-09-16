@@ -1,12 +1,7 @@
 import { Logger as NestLogger } from '@nestjs/common';
 import * as stringify from 'json-stringify-safe';
-import { getStore } from 'src/core/request/requestStore';
 
 export class Logger extends NestLogger {
-  private get store() {
-    return getStore();
-  }
-
   log(...messages: any[]): void {
     super.log(this.formatMessages(messages));
   }
@@ -24,10 +19,7 @@ export class Logger extends NestLogger {
   }
 
   private formatMessages(messages: any[]): string {
-    const requestIdPrefix = this.store.requestId
-      ? [`{${this.store.requestId}}`]
-      : [];
-    return [...requestIdPrefix, ...messages]
+    return [...messages]
       .map((msg) =>
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         typeof msg === 'object' ? stringify(msg, null, 2) : String(msg),
