@@ -10,6 +10,9 @@ async function bootstrap() {
 
   const logger = new Logger('bootstrap()');
 
+  // Enable CORS to allow requests from the frontend development server
+  app.enableCors();
+
   // Global prefix for all routes
   app.setGlobalPrefix(ENV_CONFIG.API_BASE);
 
