@@ -1,7 +1,8 @@
 import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class ConfigEnv {
+  @Type(() => Number)
   @IsInt()
   @IsOptional()
   PORT = 3000;
@@ -23,7 +24,6 @@ export class ConfigEnv {
   API_BASE = '/v6/mcp';
 
   // Azure AD Config
-
   @IsString()
   AZURE_AD_AUDIENCE!: string;
 
