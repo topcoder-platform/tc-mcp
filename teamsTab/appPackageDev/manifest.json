@@ -1,0 +1,53 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
+  "version": "1.3.0",
+  "id": "5e004f2e-b1f5-465a-b0b7-9635d649f308",
+  "developer": {
+    "name": "Topcoder",
+    "websiteUrl": "https://www.topcoder.com",
+    "privacyUrl": "https://www.topcoder.com/privacy-policy",
+    "termsOfUseUrl": "https://www.topcoder.com/community/how-it-works/terms"
+  },
+  "name": {
+    "short": "MS Teams AI Dev",
+    "full": "MS Teams AI Agent Tab App with MCP Gateway Integration"
+  },
+  "description": {
+    "short": "An AI agent powered by Bedrock and MCP.",
+    "full": "A conversational AI agent that uses AWS Bedrock for reasoning and invokes tools via the Topcoder MCP Gateway."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#FFFFFF",
+  "staticTabs": [
+    {
+      "entityId": "ai-agent-home",
+      "scopes": ["personal"],
+      "name": "AI Agent",
+    "contentUrl": "https://diamondlike-crosstied-yuette.ngrok-free.app/teamsTab/",
+    "websiteUrl": "https://www.topcoder.com"
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+      "diamondlike-crosstied-yuette.ngrok-free.app",
+      "tcmcp.pages.dev",
+      "localhost",
+    "token.botframework.com"
+  ],
+  "webApplicationInfo": {
+    "id": "82d17b02-2d34-4594-b243-09c516aad2e8",
+    "resource": "api://diamondlike-crosstied-yuette.ngrok-free.app/82d17b02-2d34-4594-b243-09c516aad2e8"
+  },
+  "defaultInstallScope": "personal",
+  "defaultGroupCapability": {
+    "team": "tab",
+    "groupchat": "tab"
+  }
+}

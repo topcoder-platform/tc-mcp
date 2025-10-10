@@ -122,14 +122,14 @@ export class AgentService {
               });
               res.write(
                 `event: message\ndata: ${JSON.stringify({
-                  type: 'tool_result',
-                  content: tool_results,
+                  type: 'chunk',
+                  content: `{{${event.name}}}`,
                 })}\n\n`,
               );
               res.write(
                 `event: message\ndata: ${JSON.stringify({
-                  type: 'chunk',
-                  content: `{{${event.name}}}`,
+                  type: 'tool_result',
+                  content: tool_results,
                 })}\n\n`,
               );
             }
