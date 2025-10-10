@@ -6,13 +6,14 @@ import { resolve } from 'path';
 export default defineConfig(() => {
 
   return {
-  plugins: [react()],
-  server: {
-    allowedHosts: ["diamondlike-crosstied-yuette.ngrok-free.app"],
-  },
-  base: '/teamsTab/', // Vite will generate assets with this base path
-  build: {
-    outDir: resolve(__dirname, 'dist'),
-  },
-};
+    plugins: [react()],
+    server: {
+      allowedHosts: ['diamondlike-crosstied-yuette.ngrok-free.app'],
+    },
+    base: '/teamsTab/', // Vite will generate assets with this base path
+    envDir: '../',
+    build: {
+      outDir: resolve(__dirname, 'dist'),
+    },
+  };
 });
