@@ -6,7 +6,7 @@ import { AgentService } from './agent.service';
 import { HistoryService } from './history.service';
 import { Conversation, ConversationSchema } from './models/conversation.schema';
 import { MemoryService } from './memory.service';
-import { TopcoderMCPClient } from './llm/tools/tc-mcp';
+import { TopcoderMCPClient } from './llm/tc-mcp';
 import { ToolsService } from 'src/mcp/tools/tools.service';
 import { LlmService } from './llm';
 import { ToolsModule } from 'src/mcp/tools/tools.module';
@@ -19,6 +19,13 @@ import { ToolsModule } from 'src/mcp/tools/tools.module';
     ]),
   ],
   controllers: [AgentController, HistoryController],
-  providers: [AgentService, HistoryService, LlmService, MemoryService, ToolsService, TopcoderMCPClient],
+  providers: [
+    TopcoderMCPClient,
+    AgentService,
+    HistoryService,
+    LlmService,
+    MemoryService,
+    ToolsService,
+  ],
 })
 export class AgentModule {}

@@ -1,6 +1,6 @@
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { buildAgentPrompt } from './prompts';
-import { TopcoderMCPClient } from './tools/tc-mcp';
+import { TopcoderMCPClient } from './tc-mcp';
 import { ChatBedrockConverse } from '@langchain/aws';
 import { ENV_CONFIG } from 'src/config';
 import { Injectable } from '@nestjs/common';

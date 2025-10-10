@@ -40,11 +40,11 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TokenValidatorMiddleware)
-      .exclude({ path: 'agent/(.*)', method: RequestMethod.ALL })
+      .exclude({ path: 'agent/*path', method: RequestMethod.ALL })
       .forRoutes('*');
     consumer
       .apply(TimingInterceptorMiddleware)
-      .exclude({ path: 'agent/(.*)', method: RequestMethod.ALL })
+      .exclude({ path: 'agent/*path', method: RequestMethod.ALL })
       .forRoutes('*');
   }
 }

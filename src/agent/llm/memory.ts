@@ -122,17 +122,6 @@ export class CachedChatHistory extends BaseChatMessageHistory {
   }
 }
 
-const activeSessionHistoryCache = new Map<string, CachedChatHistory>();
-const MAX_CACHE_SIZE = 500;
-
-function manageCacheSize() {
-  if (activeSessionHistoryCache.size > MAX_CACHE_SIZE) {
-    const oldestKey = activeSessionHistoryCache.keys().next().value;
-    if (oldestKey) activeSessionHistoryCache.delete(oldestKey);
-    console.log(`Session History cache limit reached. Evicted session: ${oldestKey}`);
-  }
-}
-
 /**
  * Converts our database message format to LangChain's BaseMessage format.
  * @param messages Messages from our MongoDB model.
@@ -235,30 +224,3 @@ function parseToolDataForLLM(toolResult: any, messageIndex: number): { toolCallF
     return null;
   }
 }
-
-/**
- * Factory function to get a cached chat history manager for a session.
- * @param sessionId The user's session ID.
- * @param userId The user's unique ID.
- * @returns An instance of a chat history manager that uses an in-memory cache.
- */
-// export const getSessionMemory = (sessionId: string, userId: string): BaseChatMessageHistory => {
-//   if (!activeSessionHistoryCache.has(sessionId)) {
-//     const dbHistory = new MongoDBChatHistory(sessionId, userId);
-//     const cachedHistory = new CachedChatHistory(dbHistory);
-//     activeSessionHistoryCache.set(sessionId, cachedHistory);
-//     manageCacheSize();
-//   }
-
-//   const historyInstance = activeSessionHistoryCache.get(sessionId)!;
-
-//   // Delete & Set again to push it to newest because of we are deleting old histories to manage Cache Size
-//   activeSessionHistoryCache.delete(sessionId);
-//   activeSessionHistoryCache.set(sessionId, historyInstance);
-
-//   return historyInstance;
-// };
-
-// export const clearCache = (sessionId: string) => {
-//   activeSessionHistoryCache.delete(sessionId);
-// };
