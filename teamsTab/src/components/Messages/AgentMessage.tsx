@@ -137,6 +137,7 @@ const AgentMessage: React.FC<AgentMessageProps> = ({ agentStatus, currentTool, m
   if (accumulatedOutput) {
     const regex = /{{\s*([a-zA-Z0-9_-]+)\s*}}/g;
     const matches = [...accumulatedOutput.matchAll(regex)];
+    let hasToolData = false;
     let lastIndex = 0;
     const toolRenderIndexMap: Record<string, number> = {};
 
@@ -153,6 +154,7 @@ const AgentMessage: React.FC<AgentMessageProps> = ({ agentStatus, currentTool, m
       const toolData = (toolDataMap[toolName] || [])[currentIndex];
 
       if (toolData) {
+        hasToolData = true;
         switch (toolName) {
           case "query-tc-challenges":
             contentElements.push(<ChallengeResultCard key={`tool-${toolName}-${match.index}`} data={toolData} compMaxHeight={parentHalfHeight} />);
@@ -171,7 +173,7 @@ const AgentMessage: React.FC<AgentMessageProps> = ({ agentStatus, currentTool, m
 
     const textAfter = accumulatedOutput.substring(lastIndex);
     if (textAfter) {
-      contentElements.push(<ExpandableMarkdown key="text-last" content={textAfter} expanded={isLastMsg || isWorking} />);
+      contentElements.push(<ExpandableMarkdown key="text-last" content={textAfter} expanded={isLastMsg || isWorking || !hasToolData} />);
     }
   }
 

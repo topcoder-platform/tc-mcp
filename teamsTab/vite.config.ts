@@ -8,7 +8,7 @@ export default defineConfig(() => {
   return {
     plugins: [react()],
     server: {
-      allowedHosts: ['diamondlike-crosstied-yuette.ngrok-free.app'],
+      allowedHosts: ['your-ngrok-static-url-frontend.app'],
     },
     base: '/teamsTab/', // Vite will generate assets with this base path
     envDir: '../',
