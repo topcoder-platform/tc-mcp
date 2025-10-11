@@ -152,9 +152,17 @@ docker build -t teams-ai-agent .
 docker run -d -p 3000:3000 teams-ai-agent
 ```
 
+> **Note:**
+> * Configure environment variables **directly in your hosting platform’s dashboard**, such as **Railway**, **AWS ECS / Lightsail**, or **Render** — no `.env` file needed.
+> * Most CI/CD platforms automatically include environment variables for required build arguments when running the Docker build.
+>
+> - For example, the build command would be like:
+>   `docker build --build-arg VITE_API_BASE_URL="https://api.topcoder.com/v6/mcp/agent" -t teams-ai-agent .`
+> 
+> *
 > **💡 Note:**
-> * Configure environment variables **directly in your hosting platform’s dashboard**, such as **Railway**, **AWS ECS / Lightsail**, or **Render** — no `.env` file needed. 
-> * Or root .env for manual or local build.
+> * Local docker build will use root .env since it is not added to `.dockerignore`, 
+> * So no need to pass VITE_API_BASE_URL as Arg at `docker build -t teams-ai-agent .`
 
 ---
 
