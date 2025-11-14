@@ -18,7 +18,7 @@ export class TopcoderChallengesService {
     accessToken?: string,
   ) {
     // Format the input parameters
-    const url = new URL(`${TOPCODER_API_BASE_URL}/challenges`);
+    const url = new URL(`${TOPCODER_API_BASE_URL}/v6/challenges`);
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
