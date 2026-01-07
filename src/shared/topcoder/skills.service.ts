@@ -18,7 +18,9 @@ export class TopcoderSkillsService {
     accessToken?: string,
   ) {
     // Format the input parameters
-    const url = new URL(`${TOPCODER_API_BASE_URL}/standardized-skills/skills`);
+    const url = new URL(
+      `${TOPCODER_API_BASE_URL}/v5/standardized-skills/skills`,
+    );
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {

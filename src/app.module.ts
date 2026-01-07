@@ -12,7 +12,6 @@ import { ToolsModule } from './mcp/tools/tools.module';
 import { GlobalProvidersModule } from './shared/global/globalProviders.module';
 import { ResourcesModule } from './mcp/resources/resources.module';
 import { randomUUID } from 'crypto';
-import { TimingInterceptorMiddleware } from './shared/global/timingInterceptor';
 import { AgentModule } from './agent/agent.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ENV_CONFIG } from './config';
@@ -52,10 +51,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TokenValidatorMiddleware)
-      .exclude({ path: 'agent/*path', method: RequestMethod.ALL })
-      .forRoutes('*');
-    consumer
-      .apply(TimingInterceptorMiddleware)
       .exclude({ path: 'agent/*path', method: RequestMethod.ALL })
       .forRoutes('*');
   }
