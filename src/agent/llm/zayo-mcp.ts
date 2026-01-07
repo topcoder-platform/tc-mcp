@@ -8,7 +8,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ZayoMcpClient {
-
   private readonly logger = new Logger(ZayoMcpClient.name);
   private readonly client: AxiosInstance;
   private readonly isEnabled: boolean;
@@ -25,20 +24,20 @@ export class ZayoMcpClient {
 
   constructor() {
     this.isEnabled = ENV_CONFIG.ZAYO_MCP_ENABLED;
-    this.serverUrl = ENV_CONFIG.ZAYO_MCP_SERVER_URL;           // e.g., http://localhost:8012
-    this.mgmtUrl = ENV_CONFIG.ZAYO_MCP_MGMT_URL;               // e.g., http://localhost:8011
-    this.clientId = ENV_CONFIG.ZAYO_MCP_CLIENT_ID;             // MCP User client ID
-    this.clientSecret = ENV_CONFIG.ZAYO_MCP_CLIENT_SECRET;     // MCP User client secret
+    this.serverUrl = ENV_CONFIG.ZAYO_MCP_SERVER_URL; // e.g., http://localhost:8012
+    this.mgmtUrl = ENV_CONFIG.ZAYO_MCP_MGMT_URL; // e.g., http://localhost:8011
+    this.clientId = ENV_CONFIG.ZAYO_MCP_CLIENT_ID; // MCP User client ID
+    this.clientSecret = ENV_CONFIG.ZAYO_MCP_CLIENT_SECRET; // MCP User client secret
     this.client = axios.create({
       baseURL: this.serverUrl,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream',
+        Accept: 'application/json, text/event-stream',
       },
       responseType: 'text',
     });
   }
-  
+
   @OnEvent('server.ready')
   async onServerInit(): Promise<void> {
     if (!this.isEnabled) {
@@ -55,35 +54,39 @@ export class ZayoMcpClient {
     params.append('grant_type', 'client_credentials');
     params.append('client_id', this.clientId);
     params.append('client_secret', this.clientSecret);
-    
-    const response = await axios.post(`${this.mgmtUrl}/oauth/token`, params.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-    
+
+    const response = await axios.post(
+      `${this.mgmtUrl}/oauth/token`,
+      params.toString(),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      },
+    );
+
     this.token = response.data.access_token;
     this.logger.log('MCP token acquired');
   }
   private async initializeMcpSession(): Promise<void> {
     this.logger.log('Initializing MCP session...');
-    
+
     await this.sendJsonRpc('initialize', {
       protocolVersion: '2024-11-05',
       capabilities: { tools: {}, prompts: {}, resources: {} },
       clientInfo: { name: 'NestJS-Agent', version: '1.0' },
     });
-    
+
     this.isInitialized = true;
     this.logger.log('MCP session initialized');
   }
   async refreshTools(): Promise<void> {
     if (!this.isEnabled || !this.token) return;
-    
+
     if (!this.isInitialized) {
       await this.initializeMcpSession();
     }
     const result = await this.sendJsonRpc('tools/list', {});
     const toolsList = result?.tools || [];
-    
+
     this.logger.log(`Found ${toolsList.length} Zayo tools`);
     this.tools = toolsList.map((tool: any) => {
       const schema = jsonSchemaToZod(tool.inputSchema);
@@ -97,6 +100,29 @@ export class ZayoMcpClient {
   }
   getTools(): DynamicStructuredTool[] {
     return this.tools;
+  }
+
+  getServiceTools(): DynamicStructuredTool[] {
+    const serviceKeywords = [
+      'get_services',
+      'ticket',
+      'resolution',
+      'maintenance',
+      'status',
+      'nni',
+    ];
+    return this.tools.filter(
+      (t) =>
+        serviceKeywords.some((k) => t.name.includes(k)) &&
+        !t.name.includes('quote'),
+    );
+  }
+
+  getQuoteTools(): DynamicStructuredTool[] {
+    const quoteKeywords = ['quote', 'address', 'location'];
+    return this.tools.filter((t) =>
+      quoteKeywords.some((k) => t.name.includes(k)),
+    );
   }
   async callTool(name: string, args: any): Promise<string> {
     if (!this.isEnabled) throw new Error('Zayo MCP is disabled');
@@ -114,7 +140,7 @@ export class ZayoMcpClient {
     const payload = { jsonrpc: '2.0', id: requestId, method, params };
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json, text/event-stream',
+      Accept: 'application/json, text/event-stream',
       Authorization: `Bearer ${this.token}`,
     };
     if (this.sessionId) headers['Mcp-Session-Id'] = this.sessionId;

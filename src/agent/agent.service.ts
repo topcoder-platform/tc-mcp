@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { LlmService } from './llm';
 import { MemoryService } from './memory.service';
+import { HumanMessage } from '@langchain/core/messages';
 
 @Injectable()
 export class AgentService {
@@ -52,9 +53,13 @@ export class AgentService {
     res.flushHeaders();
 
     try {
-      const agent = this.llmService.createConversationalAgent(userId);
-      const stream = agent.streamEvents(
-        { input: prompt, chat_history },
+      const agent = await this.llmService.createConversationalAgent(userId);
+
+      // Convert legacy input to GraphState messages
+      const messages = [...chat_history, new HumanMessage(prompt)];
+
+      const stream = await agent.streamEvents(
+        { messages },
         {
           version: 'v2',
           configurable: {
@@ -124,10 +129,37 @@ export class AgentService {
               event.name.length > 0
             ) {
               if (data && typeof data === 'object' && 'output' in data) {
+                // this.logger.log(`Tool Result: ${JSON.stringify(data)}`);
+                let toolContent = data.output;
+                // If output is a string that looks like JSON, try to parse it.
+                // If it is already an object (LangGraph might do this), use it directly.
+                if (typeof toolContent === 'string') {
+                  try {
+                    // Some tools return "Content: {...}" or just "{...}"
+                    if (
+                      toolContent.trim().startsWith('{') ||
+                      toolContent.trim().startsWith('[')
+                    ) {
+                      toolContent = JSON.parse(toolContent);
+                    }
+                  } catch (e) {
+                    // keep as string if parse fails
+                  }
+                }
+
+                // If content is wrapped in "content" property (as some MCP tools do)
+                if (
+                  toolContent &&
+                  typeof toolContent === 'object' &&
+                  'content' in toolContent
+                ) {
+                  toolContent = toolContent.content;
+                }
+
                 accumulatedOutput += ` {{${event.name}}} `;
                 tool_results.push({
                   toolName: event.name,
-                  data: JSON.parse(data.output)?.content,
+                  data: toolContent,
                 });
                 res.write(
                   `event: message\ndata: ${JSON.stringify({

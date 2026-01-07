@@ -4,7 +4,11 @@ import {
   Text,
   Body1,
   tokens,
-} from "@fluentui/react-components";
+  Accordion,
+  AccordionItem,
+  AccordionHeader,
+  AccordionPanel,
+} from '@fluentui/react-components';
 import {
   DocumentSearch24Regular,
   Code24Regular,
@@ -17,6 +21,7 @@ import {
 import { useChat } from '../context/ChatContext';
 import { useAuth } from '../context/AuthContext';
 import { getTools } from '../services/api';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 const useStyles = makeStyles({
   root: {
@@ -497,32 +502,16 @@ export default function WelcomeScreen() {
             >
               <Toolbox24Regular /> Available Tools
             </strong>
-            <div className={styles.toolListContainer}>
-              {tools.map((tool) => {
-                const isExpanded = expandedTools.has(tool.name);
-                return (
-                  <div
-                    key={tool.name}
-                    className={styles.toolItem}
-                    onClick={() => toggleTool(tool.name)}
-                  >
-                    <div className={styles.toolHeader}>
-                      <span className={styles.toolName}>{tool.name}</span>
-                      <ChevronRight20Regular
-                        className={`${styles.chevron} ${
-                          isExpanded ? styles.chevronExpanded : ''
-                        }`}
-                      />
-                    </div>
-                    {isExpanded && (
-                      <div className={styles.toolDescription}>
-                        {tool.description}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <Accordion collapsible className={styles.toolListContainer}>
+              {tools.map((tool) => (
+                <AccordionItem key={tool.name} value={tool.name}>
+                  <AccordionHeader>{tool.name}</AccordionHeader>
+                  <AccordionPanel>
+                    <MarkdownRenderer content={tool.description} />
+                  </AccordionPanel>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </Body1>
         </div>
       )}
