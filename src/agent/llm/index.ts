@@ -1,9 +1,10 @@
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { buildAgentPrompt } from './prompts';
 import { TopcoderMCPClient } from './tc-mcp';
+import { ZayoMcpClient } from './zayo-mcp';
 import { ChatBedrockConverse } from '@langchain/aws';
 import { ENV_CONFIG } from 'src/config';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 /**
  * Creates a new conversational agent instance for a specific user.
@@ -12,11 +13,20 @@ import { Injectable } from '@nestjs/common';
  * @returns A fully configured runnable agent chain with memory.
  */
 @Injectable()
-export class LlmService {
-  constructor(private readonly tcMcpClient: TopcoderMCPClient) {}
+export class LlmService implements OnModuleInit {
+  private readonly logger = new Logger(LlmService.name);
+
+  constructor(
+    private readonly tcMcpClient: TopcoderMCPClient,
+    private readonly zayoMcpClient: ZayoMcpClient,
+  ) {}
+
+  async onModuleInit() {}
 
   createConversationalAgent(userId: string) {
-    const tools = this.tcMcpClient.getTools();
+    const tcTools = this.tcMcpClient.getTools();
+    const zayoTools = this.zayoMcpClient.getTools();
+    const tools = [...tcTools, ...zayoTools];
     const prompt = buildAgentPrompt();
 
     const llm = new ChatBedrockConverse({
@@ -30,5 +40,9 @@ export class LlmService {
     const agentExecutor = new AgentExecutor({ agent, tools });
 
     return agentExecutor;
+  }
+
+  getTools() {
+    return [...this.tcMcpClient.getTools(), ...this.zayoMcpClient.getTools()];
   }
 }

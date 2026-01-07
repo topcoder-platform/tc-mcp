@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from 'src/shared/global';
 import { ENV_CONFIG } from './config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -29,6 +30,9 @@ async function bootstrap() {
   });
 
   await app.listen(ENV_CONFIG.PORT ?? 3000);
+
+  const eventEmitter = app.get(EventEmitter2);
+  eventEmitter.emit('server.ready');
 }
 
 void bootstrap();

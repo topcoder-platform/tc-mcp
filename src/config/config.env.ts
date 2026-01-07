@@ -20,6 +20,28 @@ export class ConfigEnv {
   AUTH0_CLIENT_ID!: string;
 
   @IsString()
+  ZAYO_MCP_MGMT_URL!: string;
+
+  @IsString()
+  ZAYO_MCP_CLIENT_ID!: string;
+
+  @IsString()
+  ZAYO_MCP_CLIENT_SECRET!: string;
+
+  @IsString()
+  ZAYO_MCP_SERVER_URL: string = 'http://localhost:8012/mcp';
+
+  @IsString()
+  ZAYO_MCP_TOKEN: string;
+
+  @IsBoolean()
+  ZAYO_MCP_ENABLED: boolean = true;
+
+  @IsString()
+  @IsOptional()
+  ZAYO_MCP_SESSION_ID?: string;
+
+  @IsString()
   @IsOptional()
   API_BASE = '/v6/mcp';
 

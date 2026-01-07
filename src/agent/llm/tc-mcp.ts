@@ -1,6 +1,14 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { ToolsService } from 'src/mcp/tools/tools.service';
 import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import fs from 'fs';
+import path from 'path';
+import axios, { AxiosInstance } from 'axios';
+// import config from "../../config/env";
+// import axiosRetry from "axios-retry";
+import { jsonSchemaToZod } from './schemaConverter';
+// import { ZodTypeAny } from "zod";
+// import toolDefinitions from "./tc-tools.json";
 
 export interface TopcoderMcpToolDefinition {
   name: string;
@@ -14,9 +22,92 @@ export interface TopcoderMcpToolDefinition {
  */
 @Injectable()
 export class TopcoderMCPClient {
-  private tools: DynamicStructuredTool[] | null = null;
+  private axiosInstance: AxiosInstance;
+  private sessionToken: string;
+  private mcpSessionId: string | null = null;
+  private tools: DynamicStructuredTool[] = [];
 
-  constructor(private readonly mcpToolsService: ToolsService) {}
+  constructor() {
+    this.sessionToken = '';
+    this.axiosInstance = axios.create({
+      baseURL: 'http://localhost:3000/v6/mcp/mcp',
+    });
+  }
+
+  @OnEvent('server.ready')
+  async onServerInit(): Promise<void> {
+    console.log('TopcoderMcpClient: onServerInit called via event');
+    try {
+      await this.initializeSession();
+      await this.refreshTools();
+    } catch (e) {
+      console.error('TopcoderMCP init error:', e);
+    }
+  }
+
+  async refreshTools(): Promise<void> {
+    console.log('TopcoderMcpClient: refreshTools called');
+
+    const toolDefinitions = await this.listTools();
+
+    const tools = toolDefinitions.map((toolDef) =>
+      this.createToolFromDefinition(toolDef),
+    );
+    this.tools = tools;
+  }
+
+  /**
+   * Initializes the session with the MCP Gateway and retrieves a temporary mcp-session-id.
+   */
+  private async initializeSession(): Promise<void> {
+    console.log('Initializing MCP session...');
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: { tools: {} },
+        clientInfo: { name: 'teams-ai-agent-backend', version: '1.0.0' },
+      },
+      id: 1,
+    };
+
+    try {
+      const response = await this.axiosInstance.post('', payload, {
+        headers: {
+          Accept: 'application/json, text/event-stream',
+          'Content-Type': 'application/json',
+          'X-MCP-Session': this.sessionToken,
+        },
+      });
+
+      // The session ID is returned in the headers
+      const sessionId = response.headers['mcp-session-id'];
+      if (sessionId) {
+        this.mcpSessionId = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+        console.log(
+          `MCP Session Initialized. Session ID: ${this.mcpSessionId}`,
+        );
+      } else {
+        throw new Error(
+          'MCP Session ID was not returned in the response headers.',
+        );
+      }
+    } catch (error: any) {
+      console.error(
+        'Failed to initialize MCP session. URL:',
+        this.axiosInstance.defaults.baseURL,
+        'Error:',
+        error.message,
+        'Response:',
+        error.response?.data,
+        'Status:',
+        error.response?.status,
+      );
+      // Don't throw - allow tool listing to fail gracefully
+      console.warn('MCP initialization failed - tools will be empty');
+    }
+  }
 
   /**
    * Parses an SSE response string to extract the JSON data.
@@ -37,21 +128,11 @@ export class TopcoderMCPClient {
   }
 
   /**
-   * Reads tool definitions from tools.json, generates LangChain tools,
-   * and caches them. This is the primary method to get tools for the agent.
+   * This is the primary method to get tools for the agent.
    * @returns An array of DynamicStructuredTool instances.
    */
-  public getTools(): DynamicStructuredTool[] {
-    // If tools are already generated and cached, return them immediately.
-    if (this.tools) return this.tools;
-
-    const toolDefinitions = this.mcpToolsService.listTools();
-
-    const tools = toolDefinitions.map((toolDef) =>
-      this.createToolFromDefinition(toolDef as any),
-    );
-    this.tools = tools;
-    return tools;
+  getTools(): DynamicStructuredTool[] {
+    return this.tools;
   }
 
   /**
@@ -63,14 +144,44 @@ export class TopcoderMCPClient {
     toolName: string,
     args: Record<string, any>,
   ): Promise<any> {
-    console.log(`Calling MCP tool '${toolName}' directly with args:`, args);
+    // Lazy-initialize the session if it hasn't been done yet.
+    if (!this.mcpSessionId) {
+      await this.initializeSession();
+    }
+
+    console.log(`Calling MCP tool '${toolName}' with args:`, args);
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        name: toolName,
+        arguments: args,
+      },
+      id: Date.now(), // Use a unique ID for each call
+    };
+
     try {
-      // Directly call the service, bypassing HTTP entirely
-      return await this.mcpToolsService.callTool(toolName, args);
+      const response = await this.axiosInstance.post('', payload, {
+        headers: {
+          Accept: 'application/json, text/event-stream',
+          'Content-Type': 'application/json',
+          'X-MCP-Session': this.sessionToken,
+          'mcp-session-id': this.mcpSessionId,
+        },
+      });
+
+      const parsedData = this.parseSseResponse(response.data);
+      if (parsedData?.error) {
+        throw new Error(
+          `MCP returned an error: ${JSON.stringify(parsedData.error)}`,
+        );
+      }
+
+      return parsedData?.result?.content;
     } catch (error: any) {
       console.error(
-        `Error calling MCP tool '${toolName}' directly:`,
-        error.message,
+        `Error calling MCP tool '${toolName}':`,
+        error.response?.data || error.message,
       );
       return `Error: Failed to execute tool '${toolName}'.`;
     }
@@ -79,12 +190,12 @@ export class TopcoderMCPClient {
   private createToolFromDefinition(
     toolDef: TopcoderMcpToolDefinition,
   ): DynamicStructuredTool {
-    return new (DynamicStructuredTool as unknown as {
-      new <T = any>(opts: any): DynamicStructuredTool;
-    })({
+    const schema = jsonSchemaToZod(toolDef.inputSchema);
+
+    return new DynamicStructuredTool({
       name: toolDef.name,
       description: toolDef.description,
-      schema: toolDef.inputSchema,
+      schema: schema as any,
       func: async (input: any) => {
         try {
           const result = await this.callTool(toolDef.name, input);
@@ -93,7 +204,46 @@ export class TopcoderMCPClient {
           return `Error executing tool '${toolDef.name}': ${error.message}`;
         }
       },
-    }) as DynamicStructuredTool;
+    });
+  }
+
+  /**
+   * Fetches the list of raw tool definitions from the MCP Gateway.
+   */
+  public async listTools(): Promise<any[]> {
+    if (!this.mcpSessionId) {
+      await this.initializeSession();
+    }
+    console.log('Listing MCP tools...');
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'tools/list',
+      params: {},
+      id: Date.now(),
+    };
+    try {
+      const response = await this.axiosInstance.post('', payload, {
+        headers: {
+          Accept: 'application/json, text/event-stream',
+          'Content-Type': 'application/json',
+          'X-MCP-Session': this.sessionToken,
+          'mcp-session-id': this.mcpSessionId,
+        },
+      });
+      const parsedData = this.parseSseResponse(response.data);
+      if (parsedData?.error) {
+        throw new Error(
+          `MCP returned an error: ${JSON.stringify(parsedData.error)}`,
+        );
+      }
+      const tools = parsedData?.result?.tools || [];
+      console.log(`Found ${tools.length} tools from MCP Gateway.`);
+
+      return tools;
+    } catch (error: any) {
+      console.error('Error listing MCP tools:', error.message);
+      return [];
+    }
   }
 
   /**
@@ -159,3 +309,5 @@ export class TopcoderMCPClient {
     return newSchema;
   }
 }
+
+export const tcMcpClient = new TopcoderMCPClient();

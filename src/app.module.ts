@@ -4,6 +4,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { McpModule } from '@tc/mcp-nest';
 import { HealthCheckController } from './api/health-check/healthCheck.controller';
 import { TokenValidatorMiddleware } from './core/auth/middleware/tokenValidator.middleware';
@@ -20,6 +21,7 @@ import { join } from 'path';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'teamsTab', 'dist'), // Vite build output
       exclude: [`${ENV_CONFIG.API_BASE}*`], // Nest NOT to serve static files for backend URLs
