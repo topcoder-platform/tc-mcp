@@ -44,30 +44,80 @@ STRICT OUTPUT RULES:
     };
 
     return async (state: typeof GraphState.State) => {
-        // 1. Strict Loop Prevention (Deterministic)
-        // If the last message is from a worker, we stop immediately.
-        // This prevents the Supervisor from "talking" (streaming "FINISH") or trying to route again.
-        const lastMessage = state.messages[state.messages.length - 1];
-        if (
-            lastMessage && 
-            (lastMessage.name === 'TopcoderAgent' || 
-             lastMessage.name === 'ZayoServiceAgent' || 
-             lastMessage.name === 'ZayoQuoteAgent')
-        ) {
-            return { next: 'FINISH' };
-        }
+      // 1. Strict Loop Prevention (Deterministic)
+      // If the last message is from a worker, we stop immediately.
+      const lastMessage = state.messages[state.messages.length - 1];
+      if (
+        lastMessage &&
+        (lastMessage.name === 'TopcoderAgent' ||
+          lastMessage.name === 'ZayoServiceAgent' ||
+          lastMessage.name === 'ZayoQuoteAgent')
+      ) {
+        return { next: 'FINISH' };
+      }
 
-        const messages = [new SystemMessage(systemPrompt), ...state.messages];
-        const llmWithTool = supervisorLlm.bindTools([routeTool]);
-        const response = await llmWithTool.invoke(messages);
+      const messages = [new SystemMessage(systemPrompt), ...state.messages];
+      const llmWithTool = supervisorLlm.bindTools([routeTool]);
 
-        const toolCall = response.tool_calls?.[0];
-        
-        // If the LLM decided to answer directly (no tool call), or if it wants to finish:
-        if (!toolCall) {
-            // Return the supervisor's text response as a message so the user sees it
+      // Retry loop for invalid routing
+      const MAX_RETRIES = 2;
+      let attempt = 0;
+      let nextDestination: string | undefined;
+
+      while (attempt < MAX_RETRIES) {
+        attempt++;
+
+        try {
+          const response = await llmWithTool.invoke(messages);
+          const toolCall = response.tool_calls?.[0];
+
+          // If the LLM decided to answer directly (no tool call):
+          if (!toolCall) {
+            // Return the supervisor's text response as a message
             return { messages: [response], next: 'FINISH' };
+          }
+
+          // Extract the next destination from tool call
+          nextDestination = toolCall.args?.next;
+
+          // If valid destination found, break out of retry loop
+          if (
+            nextDestination &&
+            [
+              'TopcoderAgent',
+              'ZayoServiceAgent',
+              'ZayoQuoteAgent',
+              'FINISH',
+            ].includes(nextDestination)
+          ) {
+            return { next: nextDestination };
+          }
+
+          // Invalid destination - log and retry
+          console.warn(
+            `[Supervisor] Attempt ${attempt}/${MAX_RETRIES}: Invalid 'next' value: ${nextDestination}`,
+          );
+
+          if (attempt < MAX_RETRIES) {
+            // Add a clarification message to help the LLM
+            messages.push(
+              new SystemMessage(
+                `ERROR: You must call the 'route' tool with a valid 'next' value: TopcoderAgent, ZayoServiceAgent, ZayoQuoteAgent, or FINISH. Please try again.`,
+              ),
+            );
+          }
+        } catch (error) {
+          console.error(`[Supervisor] Error on attempt ${attempt}:`, error);
+          if (attempt === MAX_RETRIES) {
+            throw error; // Re-throw on final attempt
+          }
         }
-        return { next: toolCall.args.next };
+      }
+
+      // All retries exhausted - default to FINISH
+      console.error(
+        `[Supervisor] All ${MAX_RETRIES} attempts failed. Invalid or missing 'next' value: ${nextDestination}. Defaulting to FINISH.`,
+      );
+      return { next: 'FINISH' };
     };
 };

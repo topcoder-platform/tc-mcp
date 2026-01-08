@@ -131,14 +131,59 @@ export class ZayoMcpClient {
 
   async callTool(name: string, args: any): Promise<string> {
     if (!this.isEnabled) throw new Error('Zayo MCP is disabled');
-    this.logger.log(`Calling tool: ${name}`);
-    const result = await this.sendJsonRpc('tools/call', {
-      name,
-      arguments: args || {},
-    });
-    const content = result?.content?.[0];
-    if (content?.type === 'text') return content.text;
-    return JSON.stringify(result);
+    this.logger.log(`Calling tool: ${name}\n${JSON.stringify(args)}`);
+
+    try {
+      const result = await this.sendJsonRpc('tools/call', {
+        name,
+        arguments: args || {},
+      });
+
+      if ('error' in result) {
+        const errorMsg = JSON.stringify(result.error);
+        // Truncate massive error messages (e.g., validation errors with 100k+ lines)
+        if (errorMsg.length > 2000) {
+          const truncated = errorMsg.substring(0, 2000);
+          this.logger.error(
+            `Tool ${name} returned large error (${errorMsg.length} chars), truncated to 2000 chars`,
+          );
+          // Return error as JSON so LLM can read it
+          return JSON.stringify({
+            error: true,
+            message: 'Tool returned a large error response that was truncated',
+            details: truncated,
+            note: 'Error message was too long and has been truncated',
+          });
+        }
+        // Return error as JSON instead of throwing
+        this.logger.error(`Tool ${name} error:`, result.error);
+        return JSON.stringify({
+          error: true,
+          message: 'Tool execution failed',
+          details: result.error,
+        });
+      }
+
+      const content = result.result.content || [];
+      const serialized = JSON.stringify(content);
+
+      // Warn about large successful responses
+      if (serialized.length > 100000) {
+        this.logger.warn(
+          `Tool ${name} returned large response (${serialized.length} chars), may cause context issues`,
+        );
+      }
+
+      return serialized;
+    } catch (error: any) {
+      // Catch network errors or other exceptions
+      this.logger.error(`Tool ${name} exception:`, error);
+      return JSON.stringify({
+        error: true,
+        message: 'An error occurred while calling the tool',
+        details: error.message,
+      });
+    }
   }
 
   private async sendJsonRpc(method: string, params: any): Promise<any> {

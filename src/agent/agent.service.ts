@@ -129,32 +129,75 @@ export class AgentService {
               event.name.length > 0
             ) {
               if (data && typeof data === 'object' && 'output' in data) {
-                // this.logger.log(`Tool Result: ${JSON.stringify(data)}`);
+                this.logger.log(
+                  `Tool ${event.name} - Raw data.output type: ${typeof data.output}`,
+                );
+                this.logger.log(
+                  `Tool ${event.name} - Raw data.output: ${JSON.stringify(data.output).substring(0, 500)}`,
+                );
+
                 let toolContent = data.output;
+
                 // If output is a string that looks like JSON, try to parse it.
-                // If it is already an object (LangGraph might do this), use it directly.
                 if (typeof toolContent === 'string') {
                   try {
-                    // Some tools return "Content: {...}" or just "{...}"
                     if (
                       toolContent.trim().startsWith('{') ||
                       toolContent.trim().startsWith('[')
                     ) {
                       toolContent = JSON.parse(toolContent);
+                      this.logger.log(
+                        `Tool ${event.name} - Parsed string to object`,
+                      );
                     }
                   } catch (e) {
-                    // keep as string if parse fails
+                    this.logger.log(
+                      `Tool ${event.name} - Failed to parse: ${e.message}`,
+                    );
                   }
                 }
 
-                // If content is wrapped in "content" property (as some MCP tools do)
+                // Handle Zayo MCP structure: {content: [], structuredContent: {...data...}, isError: false}
+                // OR: {content: [...], metadata: {...}, isError: false}
                 if (
                   toolContent &&
                   typeof toolContent === 'object' &&
-                  'content' in toolContent
+                  'isError' in toolContent
                 ) {
+                  this.logger.log(
+                    `Tool ${event.name} - Detected Zayo MCP structure`,
+                  );
+                  // Check if structuredContent exists and has data (new Zayo format)
+                  if (
+                    'structuredContent' in toolContent &&
+                    toolContent.structuredContent
+                  ) {
+                    this.logger.log(
+                      `Tool ${event.name} - Using structuredContent`,
+                    );
+                    toolContent = toolContent.structuredContent;
+                  }
+                  // Otherwise use content array (old format)
+                  else if ('content' in toolContent) {
+                    this.logger.log(`Tool ${event.name} - Using content array`);
+                    toolContent = toolContent.content;
+                  }
+                } else if (
+                  toolContent &&
+                  typeof toolContent === 'object' &&
+                  'content' in toolContent &&
+                  !('isError' in toolContent)
+                ) {
+                  // Generic MCP structure without isError (TC tools)
+                  this.logger.log(
+                    `Tool ${event.name} - Detected generic content wrapper`,
+                  );
                   toolContent = toolContent.content;
                 }
+
+                this.logger.log(
+                  `Tool ${event.name} - Final content type: ${typeof toolContent}, isArray: ${Array.isArray(toolContent)}`,
+                );
 
                 accumulatedOutput += ` {{${event.name}}} `;
                 tool_results.push({
@@ -189,11 +232,31 @@ export class AgentService {
         this.memoryService.clearCache(sessionId);
 
         if (!res.writableEnded) {
-          const friendlyError =
+          // Determine user-friendly error message based on error type
+          let friendlyError =
             "I'm sorry, an unexpected error occurred. Please try again.";
+
+          if (error.message?.includes('Input is too long')) {
+            friendlyError =
+              'The conversation history is too long. Please start a new conversation.';
+          } else if (error.message?.includes('validation')) {
+            friendlyError =
+              'There was an issue with the data format. Please try rephrasing your request.';
+          } else if (error.message?.includes('Branch condition')) {
+            friendlyError =
+              'There was a routing error. Please try again or rephrase your request.';
+          } else if (error.$metadata?.httpStatusCode === 400) {
+            friendlyError =
+              'Invalid request to the AI service. Please try a different query.';
+          } else if (error.$metadata?.httpStatusCode >= 500) {
+            friendlyError =
+              'The AI service is temporarily unavailable. Please try again later.';
+          }
+
           const errorMessage = JSON.stringify({
             type: 'error',
             content: friendlyError,
+            details: error.message, // Include technical details for debugging
           });
           res.write(`event: error\ndata: ${errorMessage}\n\n`);
           serverAbortController.abort();
