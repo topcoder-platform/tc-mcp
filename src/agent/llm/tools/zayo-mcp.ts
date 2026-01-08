@@ -48,6 +48,7 @@ export class ZayoMcpClient {
     await this.initializeMcpSession();
     await this.refreshTools();
   }
+
   private async refreshToken(): Promise<void> {
     this.logger.log('Fetching MCP token...');
     const params = new URLSearchParams();
@@ -66,6 +67,7 @@ export class ZayoMcpClient {
     this.token = response.data.access_token;
     this.logger.log('MCP token acquired');
   }
+
   private async initializeMcpSession(): Promise<void> {
     this.logger.log('Initializing MCP session...');
 
@@ -78,6 +80,7 @@ export class ZayoMcpClient {
     this.isInitialized = true;
     this.logger.log('MCP session initialized');
   }
+
   async refreshTools(): Promise<void> {
     if (!this.isEnabled || !this.token) return;
 
@@ -98,6 +101,7 @@ export class ZayoMcpClient {
       });
     });
   }
+
   getTools(): DynamicStructuredTool[] {
     return this.tools;
   }
@@ -124,6 +128,7 @@ export class ZayoMcpClient {
       quoteKeywords.some((k) => t.name.includes(k)),
     );
   }
+
   async callTool(name: string, args: any): Promise<string> {
     if (!this.isEnabled) throw new Error('Zayo MCP is disabled');
     this.logger.log(`Calling tool: ${name}`);
@@ -135,6 +140,7 @@ export class ZayoMcpClient {
     if (content?.type === 'text') return content.text;
     return JSON.stringify(result);
   }
+
   private async sendJsonRpc(method: string, params: any): Promise<any> {
     const requestId = ++this.requestCounter;
     const payload = { jsonrpc: '2.0', id: requestId, method, params };

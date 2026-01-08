@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { TopcoderMCPClient } from './tc-mcp';
-import { ZayoMcpClient } from './zayo-mcp';
+import { TopcoderMCPClient } from './tools/tc-mcp';
+import { ZayoMcpClient } from './tools/zayo-mcp';
 import { StateGraph, START, END } from '@langchain/langgraph';
 import { createTopcoderNode } from './agents/topcoder.agent';
 import { createZayoServiceNode } from './agents/zayo-services.agent';

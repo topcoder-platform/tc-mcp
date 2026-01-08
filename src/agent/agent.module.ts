@@ -6,8 +6,8 @@ import { AgentService } from './agent.service';
 import { HistoryService } from './history.service';
 import { Conversation, ConversationSchema } from './models/conversation.schema';
 import { MemoryService } from './memory.service';
-import { TopcoderMCPClient } from './llm/tc-mcp';
-import { ZayoMcpClient } from './llm/zayo-mcp';
+import { TopcoderMCPClient } from './llm/tools/tc-mcp';
+import { ZayoMcpClient } from './llm/tools/zayo-mcp';
 import { LlmService } from './llm';
 
 @Module({

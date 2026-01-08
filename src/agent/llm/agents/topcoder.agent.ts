@@ -2,7 +2,7 @@ import { createToolCallingAgent, AgentExecutor } from 'langchain/agents';
 import { ChatBedrockConverse } from '@langchain/aws';
 import { ENV_CONFIG } from 'src/config';
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { buildAgentPrompt } from '../prompts';
+import { buildAgentPrompt } from './prompts/tc_system_prompt';
 import { GraphState } from '../graph-state';
 import { HumanMessage } from '@langchain/core/messages';
 

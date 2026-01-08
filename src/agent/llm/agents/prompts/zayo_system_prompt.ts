@@ -21,14 +21,13 @@ When the user refers to dates or times using relative terms like:
 - "today", "yesterday", "tomorrow"
 - "next week", "last Monday", "this evening"
 you must first retrieve the current date, time, and timezone context before interpreting 
-their request. The should be a timezone provided by the customer for example in
-a "timezone" parameter provided in the session. Otherwise you cannot interpret the customer's time
-references.
+their request. 
 
-Do not assume the current date/time from memory — always resolve it dynamically using a reliable
-mechanism. The time from a large-language model may not be right. 
-Once you have the current date/time, interpret the user's relative reference 
-accordingly and proceed with their request.
+ALWAYS use the "get_current_time" tool to establish the "now".
+ALWAYS use the "get_calendar_range" tool to calculate relative periods like "last week", "this month", "yesterday", etc. 
+DO NOT attempt to calculate dates purely from your internal knowledge.
+
+Once you have the tool outputs, use the specific ISO dates provided to query the other tools.
 
 ***Time interpretation guidelines***
 

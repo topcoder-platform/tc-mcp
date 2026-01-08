@@ -31,9 +31,6 @@ export class ConfigEnv {
   @IsString()
   ZAYO_MCP_SERVER_URL: string = 'http://localhost:8012/mcp';
 
-  @IsString()
-  ZAYO_MCP_TOKEN: string;
-
   @IsBoolean()
   ZAYO_MCP_ENABLED: boolean = true;
 
