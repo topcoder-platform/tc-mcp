@@ -1,12 +1,13 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Body1, Button, makeStyles, mergeClasses, Spinner } from "@fluentui/react-components";
-import UserMessage from "./Messages/UserMessage";
-import AgentMessage from "./Messages/AgentMessage";
+import UserMessage from './Messages/UserMessage';
 import UserInput from "./UserInput";
 import WelcomeScreen from "./WelcomeScreen";
 import { useChat } from "../context/ChatContext";
 import { useViewport } from "../hooks/useViewport";
 import { ArrowClockwise20Regular } from "@fluentui/react-icons";
+
+const AgentMessage = React.lazy(() => import('./Messages/AgentMessage'));
 
 const useStyles = makeStyles({
   root: {

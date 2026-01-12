@@ -333,20 +333,7 @@ export default function WelcomeScreen() {
   const [tools, setTools] = useState<{ name: string; description: string }[]>(
     [],
   );
-  const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
   const userName = userProfile?.name || 'User';
-
-  const toggleTool = (toolName: string) => {
-    setExpandedTools((prev) => {
-      const next = new Set(prev);
-      if (next.has(toolName)) {
-        next.delete(toolName);
-      } else {
-        next.add(toolName);
-      }
-      return next;
-    });
-  };
 
   useEffect(() => {
     getTools()
