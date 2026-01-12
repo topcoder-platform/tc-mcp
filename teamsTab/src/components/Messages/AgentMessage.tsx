@@ -7,6 +7,7 @@ import ServiceResultCard from './ServiceResultCard';
 import TicketResultCard from './TicketResultCard';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { ChevronUp16Filled, ChevronDown16Filled } from '@fluentui/react-icons';
+import { ErrorBoundary } from 'react-error-boundary';
 
 const useStyles = makeStyles({
   root: {
@@ -208,11 +209,22 @@ const AgentMessage: React.FC<AgentMessageProps> = ({
         switch (toolName) {
           case 'query-tc-challenges':
             contentElements.push(
-              <ChallengeResultCard
-                key={`tool-${toolName}-${match.index}`}
-                data={toolData}
-                compMaxHeight={parentHalfHeight}
-              />,
+              <ErrorBoundary
+                onError={() => {
+                  console.log(
+                    'Error in ChallengeResultCard: ',
+                    `tool-${toolName}-${match.index}\n`,
+                    toolData,
+                  );
+                }}
+                fallback={<div className=""></div>}
+              >
+                <ChallengeResultCard
+                  key={`tool-${toolName}-${match.index}`}
+                  data={toolData}
+                  compMaxHeight={parentHalfHeight}
+                />
+              </ErrorBoundary>,
             );
             break;
           case 'query-tc-skills':

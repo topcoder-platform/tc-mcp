@@ -69,7 +69,7 @@ export class ZayoMcpClient {
   }
 
   private async initializeMcpSession(): Promise<void> {
-    this.logger.log('Initializing MCP session...');
+    this.logger.log(`Initializing MCP session with server: ${this.serverUrl}`);
 
     await this.sendJsonRpc('initialize', {
       protocolVersion: '2024-11-05',
@@ -195,7 +195,43 @@ export class ZayoMcpClient {
       Authorization: `Bearer ${this.token}`,
     };
     if (this.sessionId) headers['Mcp-Session-Id'] = this.sessionId;
-    const response = await this.client.post('/mcp', payload, { headers });
+
+    let response;
+    const maxRetries = 3;
+    const retryDelay = 3000; // 3 seconds
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        response = await this.client.post('/mcp', payload, { headers });
+        break; // Success, exit loop
+      } catch (error: any) {
+        const isLastAttempt = attempt === maxRetries;
+        const status = error.response?.status;
+
+        // Check for 502 Bad Gateway (Cold Start)
+        if (status === 502 && !isLastAttempt) {
+          this.logger.warn(
+            `Received 502 Bad Gateway from MCP server. Server might be waking up (Cold Start). Retrying attempt ${attempt}/${maxRetries} in ${retryDelay}ms...`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          continue;
+        }
+
+        // For other errors or last attempt, log and throw
+        if (axios.isAxiosError(error)) {
+          this.logger.error(
+            `MCP RPC Error for ${method}: ${error.message}. Target: ${error.config?.baseURL}${error.config?.url}`,
+          );
+          if (error.response) {
+            this.logger.error(`Status: ${error.response.status}`);
+            this.logger.error(
+              `Response Data: ${JSON.stringify(error.response.data)}`,
+            );
+          }
+        }
+        throw error;
+      }
+    }
     // Capture session ID
     const newSid = response.headers['mcp-session-id'];
     if (newSid) this.sessionId = newSid;
