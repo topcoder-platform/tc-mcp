@@ -164,7 +164,7 @@ export class ZayoMcpClient {
         });
       }
 
-      const content = result.result.content || [];
+      const content = result?.structuredContent || result?.content || [];
       const serialized = JSON.stringify(content);
 
       // Warn about large successful responses
