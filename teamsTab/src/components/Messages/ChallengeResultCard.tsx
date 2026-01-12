@@ -77,8 +77,8 @@ interface Challenge {
   id: string;
   name: string;
   status: string;
-  track: string;
-  type: string;
+  track: string | { name: string };
+  type: string | { name: string };
   description: string;
   created: string;
   updated: string;
@@ -119,26 +119,61 @@ const ChallengeResultCard: React.FC<ChallengeResultCardProps> = ({ data, compMax
     return <EmptyState message="No challenges found matching your criteria." icon={<SearchInfo24Regular />} />;
   }
 
+  const getTrackName = (track: string | { name: string }) => {
+    if (typeof track === 'string') return track;
+    return track?.name || '';
+  };
+
   return (
     <>
-      <Card className={styles.card} style={compMaxHeight ? { maxHeight: `${compMaxHeight}px`, overflowY: "auto", scrollbarWidth: "thin" } : {}}>
+      <Card
+        className={styles.card}
+        style={
+          compMaxHeight
+            ? {
+                maxHeight: `${compMaxHeight}px`,
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+              }
+            : {}
+        }
+      >
         <CardPreview>
           <Table size="small" className={styles.table}>
             <TableHeader>
               <TableRow>
                 {/* Adjust column widths based on screen size */}
-                <TableHeaderCell style={{ width: isMobile ? "85%" : "50%" }}>Challenge</TableHeaderCell>
+                <TableHeaderCell style={{ width: isMobile ? '85%' : '50%' }}>
+                  Challenge
+                </TableHeaderCell>
                 {/* Hide these columns on mobile */}
-                <TableHeaderCell className={styles.hideOnMobile} style={{ width: "15%" }}>
+                <TableHeaderCell
+                  className={styles.hideOnMobile}
+                  style={{ width: '15%' }}
+                >
                   Status
                 </TableHeaderCell>
-                <TableHeaderCell className={styles.hideOnMobile} style={{ width: "15%" }}>
+                <TableHeaderCell
+                  className={styles.hideOnMobile}
+                  style={{ width: '15%' }}
+                >
                   Prize
                 </TableHeaderCell>
-                <TableHeaderCell className={styles.hideOnMobile} style={{ width: "15%" }}>
+                <TableHeaderCell
+                  className={styles.hideOnMobile}
+                  style={{ width: '15%' }}
+                >
                   Track
                 </TableHeaderCell>
-                <TableHeaderCell style={{ width: isMobile ? "15%" : "5%", textAlign: "center", opacity: 0 }}>Actions</TableHeaderCell>
+                <TableHeaderCell
+                  style={{
+                    width: isMobile ? '15%' : '5%',
+                    textAlign: 'center',
+                    opacity: 0,
+                  }}
+                >
+                  Actions
+                </TableHeaderCell>
               </TableRow>
             </TableHeader>
             {data.data.map((challenge) => (
@@ -147,34 +182,58 @@ const ChallengeResultCard: React.FC<ChallengeResultCardProps> = ({ data, compMax
                 <TableRow className={styles.noBorder}>
                   <TableCell>
                     <div className={styles.cellContent}>
-                      <Link href={`https://www.topcoder.com/challenges/${challenge.id}`} target="_blank" rel="noopener noreferrer" title={challenge.name}>
+                      <Link
+                        href={`https://www.topcoder.com/challenges/${challenge.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={challenge.name}
+                      >
                         <Text weight="semibold">{challenge.name}</Text>
                       </Link>
                     </div>
                   </TableCell>
                   {/* Hide these cells on mobile */}
                   <TableCell className={styles.hideOnMobile}>
-                    <div className={styles.cellContent} title={challenge.status}>
+                    <div
+                      className={styles.cellContent}
+                      title={challenge.status}
+                    >
                       <Text>{challenge.status}</Text>
                     </div>
                   </TableCell>
                   <TableCell className={styles.hideOnMobile}>
                     <div className={styles.cellContent}>
-                      <Text weight="semibold">{challenge.overview?.totalPrizes ? `$${challenge.overview.totalPrizes.toLocaleString()}` : "N/A"}</Text>
+                      <Text weight="semibold">
+                        {challenge.overview?.totalPrizes
+                          ? `$${challenge.overview.totalPrizes.toLocaleString()}`
+                          : 'N/A'}
+                      </Text>
                     </div>
                   </TableCell>
                   <TableCell className={styles.hideOnMobile}>
-                    <div className={styles.cellContent} title={challenge.track}>
-                      <Text>{challenge.track}</Text>
+                    <div
+                      className={styles.cellContent}
+                      title={getTrackName(challenge.track)}
+                    >
+                      <Text>{getTrackName(challenge.track)}</Text>
                     </div>
                   </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    <Button appearance="subtle" icon={<ViewDetailsIcon />} onClick={() => handleViewDetails(challenge)}></Button>
+                  <TableCell style={{ textAlign: 'center' }}>
+                    <Button
+                      appearance="subtle"
+                      icon={<ViewDetailsIcon />}
+                      onClick={() => handleViewDetails(challenge)}
+                    ></Button>
                   </TableCell>
                 </TableRow>
                 <TableRow className={styles.noBorder}>
-                  <TableCell colSpan={isMobile ? 2 : 5} style={{ paddingBottom: "12px" }}>
-                    {challenge.skills?.length && <SkillBadge skills={challenge.skills} />}
+                  <TableCell
+                    colSpan={isMobile ? 2 : 5}
+                    style={{ paddingBottom: '12px' }}
+                  >
+                    {challenge.skills?.length && (
+                      <SkillBadge skills={challenge.skills} />
+                    )}
                   </TableCell>
                 </TableRow>
               </TableBody>

@@ -88,8 +88,8 @@ interface Challenge {
   id: string;
   name: string;
   status: string;
-  track: string;
-  type: string;
+  track: string | { name: string };
+  type: string | { name: string };
   description: string;
   created: string;
   updated: string;
@@ -111,6 +111,11 @@ interface ChallengeDetailsViewProps {
 const ChallengeDetailsView: React.FC<ChallengeDetailsViewProps> = ({ challenge }) => {
   const styles = useStyles();
 
+  const getName = (item: string | { name: string }) => {
+    if (typeof item === 'string') return item;
+    return item?.name || '';
+  };
+
   return (
     <div className={styles.root}>
       <header className={styles.header}>
@@ -123,17 +128,25 @@ const ChallengeDetailsView: React.FC<ChallengeDetailsViewProps> = ({ challenge }
           <div className={styles.metaInfo}>
             <div className={styles.titleLink}>
               <Link20Color />
-              <Link href={`https://www.topcoder.com/challenges/${challenge.id}`} target="_blank" rel="noopener noreferrer">
+              <Link
+                href={`https://www.topcoder.com/challenges/${challenge.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 View on Topcoder.com
               </Link>
             </div>
-            {challenge.skills && challenge.skills.length > 0 && <SkillBadge skills={challenge.skills} />}
+            {challenge.skills && challenge.skills.length > 0 && (
+              <SkillBadge skills={challenge.skills} />
+            )}
           </div>
 
           {/* Right Column (30%) */}
           <div className={styles.prizeInfo}>
             {/* <div className={styles.metric}> */}
-            <Subtitle2 as="h3">${challenge.overview?.totalPrizes?.toLocaleString() || "N/A"}</Subtitle2>
+            <Subtitle2 as="h3">
+              ${challenge.overview?.totalPrizes?.toLocaleString() || 'N/A'}
+            </Subtitle2>
             <Trophy20Regular
               className={styles.metricLabelIcon}
               aria-label="Total Prize" // Add aria-label for accessibility
@@ -149,18 +162,21 @@ const ChallengeDetailsView: React.FC<ChallengeDetailsViewProps> = ({ challenge }
           <tr className={styles.infoTableRow}>
             <td className={styles.infoKeyCell}>Track / Type</td>
             <td className={styles.infoValueCell}>
-              {challenge.track} / {challenge.type}
+              {getName(challenge.track)} / {getName(challenge.type)}
             </td>
           </tr>
           <tr className={styles.infoTableRow}>
             <td className={styles.infoKeyCell}>Key Dates</td>
             <td className={styles.infoValueCell}>
-              {new Date(challenge.startDate).toLocaleDateString()} - {new Date(challenge.endDate).toLocaleDateString()}
+              {new Date(challenge.startDate).toLocaleDateString()} -{' '}
+              {new Date(challenge.endDate).toLocaleDateString()}
             </td>
           </tr>
           <tr className={styles.infoTableRow}>
             <td className={styles.infoKeyCell}>Current Phases</td>
-            <td className={styles.infoValueCell}>{challenge.currentPhaseNames.join(", ")}</td>
+            <td className={styles.infoValueCell}>
+              {challenge.currentPhaseNames.join(', ')}
+            </td>
           </tr>
           <tr className={styles.infoTableRow}>
             <td className={styles.infoKeyCell}>Author</td>
