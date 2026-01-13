@@ -17,6 +17,7 @@ export function LogTime(label?: string) {
         const result = await originalMethod.apply(this, args);
         const ms = Date.now() - start;
         logger.log(`${label || propertyKey} executed in ${ms}ms`);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return result;
       } catch (error) {
         const ms = Date.now() - start;

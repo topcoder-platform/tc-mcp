@@ -1,10 +1,12 @@
 import * as dotenv from 'dotenv';
+import { resolve } from 'path';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { ConfigEnv } from './config.env';
 import { Logger } from 'src/shared/global';
 
 const logger = new Logger('ENV_CONFIG');
+const envPath = resolve(__dirname, '../../.env');
 
 /**
  * Loads and validates environment variables into a `ConfigEnv` instance.
@@ -47,5 +49,8 @@ function loadAndValidateEnv(): ConfigEnv {
   return env;
 }
 
-dotenv.config();
+const { error } = dotenv.config({ path: envPath });
+if (error) {
+  logger.warn(`.env file not found at ${envPath}; falling back to process env`);
+}
 export const ENV_CONFIG = loadAndValidateEnv();
