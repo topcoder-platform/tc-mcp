@@ -336,9 +336,10 @@ export default function WelcomeScreen() {
   const userName = userProfile?.name || 'User';
 
   useEffect(() => {
-    // getTools()
-    //   .then((data) => setTools(data))
-    //   .catch((err) => console.error('Failed to fetch tools', err));
+    getTools()
+      // TODO: Render its UI better
+      .then((_data) => setTools([]))
+      .catch((err) => console.error('Failed to fetch tools', err));
   }, []);
 
   const descriptionText =
