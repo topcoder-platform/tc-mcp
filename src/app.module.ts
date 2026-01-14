@@ -32,13 +32,24 @@ import * as fs from 'fs';
     }),
     MongooseModule.forRootAsync({
       useFactory: (): MongooseModuleOptions => {
+        const certPath = join(
+          process.cwd(),
+          'certs',
+          'aws',
+          'global-bundle.pem',
+        );
+
+        if (ENV_CONFIG.MONGO_IS_DOCUMENTDB && !fs.existsSync(certPath)) {
+          throw new Error(`Document DB CA file not found at ${certPath}`);
+        }
+
         const opts: MongooseModuleOptions = {
           uri: ENV_CONFIG.MONGO_DB_URL,
           retryWrites: false,
 
           // TLS
-          tls: !!ENV_CONFIG.MONGO_TLS_CA_PATH,
-          tlsCAFile: ENV_CONFIG.MONGO_TLS_CA_PATH,
+          tls: ENV_CONFIG.MONGO_IS_DOCUMENTDB,
+          tlsCAFile: certPath,
 
           // REQUIRED for DocumentDB over SSH tunnel
           directConnection: ENV_CONFIG.MONGO_IN_SSH_TUNNEL,
@@ -47,15 +58,6 @@ import * as fs from 'fs';
           // Auth Mechanism for DocumentDB Compatibility
           authMechanism: 'SCRAM-SHA-1',
         };
-
-        if (
-          ENV_CONFIG.MONGO_TLS_CA_PATH &&
-          !fs.existsSync(ENV_CONFIG.MONGO_TLS_CA_PATH)
-        ) {
-          throw new Error(
-            `Mongo CA file not found at ${ENV_CONFIG.MONGO_TLS_CA_PATH}`,
-          );
-        }
 
         return opts;
       },

@@ -75,11 +75,11 @@ export class ConfigEnv {
   @IsString()
   MONGO_DB_URL!: string;
 
-  @IsString()
-  @IsOptional()
-  MONGO_TLS_CA_PATH?: string;
-
   @IsBoolean()
   @IsOptional()
   MONGO_IN_SSH_TUNNEL?: boolean = false;
+
+  @IsBoolean()
+  @IsOptional()
+  MONGO_IS_DOCUMENTDB?: boolean = false;
 }
