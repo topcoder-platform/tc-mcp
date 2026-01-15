@@ -223,11 +223,22 @@ export class ZayoMcpClient {
       return serialized;
     } catch (error: any) {
       // Catch network errors or other exceptions
-      this.logger.error(`Tool ${name} exception:`, error);
+      const errorMsg = error.message || 'Unknown error';
+      const errorDetails = error.response?.data
+        ? JSON.stringify(error.response.data).substring(0, 200)
+        : errorMsg;
+
+      this.logger.error(
+        `Tool ${name} exception: ${errorMsg}`,
+        errorDetails.length > 200
+          ? `${errorDetails}... (truncated)`
+          : errorDetails,
+      );
+      
       return JSON.stringify({
         error: true,
         message: 'An error occurred while calling the tool',
-        details: error.message,
+        details: errorMsg,
       });
     }
   }
@@ -235,26 +246,33 @@ export class ZayoMcpClient {
   private async sendJsonRpc(method: string, params: any): Promise<any> {
     const requestId = ++this.requestCounter;
     const payload = { jsonrpc: '2.0', id: requestId, method, params };
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json, text/event-stream',
-      Authorization: `Bearer ${this.token}`,
-    };
-    if (this.sessionId) headers['Mcp-Session-Id'] = this.sessionId;
-
+    
     let response;
     const maxRetries = 3;
     const retryDelay = 3000; // 3 seconds
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        // Build headers fresh for each attempt to include updated sessionId
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json, text/event-stream',
+          Authorization: `Bearer ${this.token}`,
+        };
+        if (this.sessionId) headers['Mcp-Session-Id'] = this.sessionId;
+
         response = await this.client.post('/mcp', payload, { headers });
+
+        // Capture session ID immediately after successful response
+        const newSid = response.headers['mcp-session-id'];
+        if (newSid) this.sessionId = newSid;
+
         break; // Success, exit loop
       } catch (error: any) {
         const isLastAttempt = attempt === maxRetries;
         const status = error.response?.status;
 
-        // Check for 502 Bad Gateway (Cold Start)
+        // Check for 502 Bad Gateway (Cold Start) - retry
         if (status === 502 && !isLastAttempt) {
           this.logger.warn(
             `Received 502 Bad Gateway from MCP server. Server might be waking up (Cold Start). Retrying attempt ${attempt}/${maxRetries} in ${retryDelay}ms...`,
@@ -263,24 +281,45 @@ export class ZayoMcpClient {
           continue;
         }
 
+        // Check for 400 with session error - might need to reinitialize
+        if (status === 400 && error.response?.data?.includes?.('session')) {
+          this.logger.warn(
+            `Session error detected (${error.response.data}). May need to reinitialize session.`,
+          );
+        }
+
         // For other errors or last attempt, log and throw
         if (axios.isAxiosError(error)) {
+          const errorMsg = error.message || 'Unknown error';
+          const responseData = error.response?.data;
+
+          // Truncate large error responses
+          let truncatedData = '';
+          if (responseData) {
+            const dataStr =
+              typeof responseData === 'string'
+                ? responseData
+                : JSON.stringify(responseData);
+            truncatedData =
+              dataStr.length > 200
+                ? `${dataStr.substring(0, 200)}... (truncated)`
+                : dataStr;
+          }
+
           this.logger.error(
-            `MCP RPC Error for ${method}: ${error.message}. Target: ${error.config?.baseURL}${error.config?.url}`,
+            `MCP RPC Error for ${method}: ${errorMsg}. Target: ${error.config?.baseURL}${error.config?.url}`,
           );
           if (error.response) {
             this.logger.error(`Status: ${error.response.status}`);
-            this.logger.error(
-              `Response Data: ${JSON.stringify(error.response.data)}`,
-            );
+            if (truncatedData) {
+              this.logger.error(`Response Data: ${truncatedData}`);
+            }
           }
         }
         throw error;
       }
     }
-    // Capture session ID
-    const newSid = response.headers['mcp-session-id'];
-    if (newSid) this.sessionId = newSid;
+    
     // Parse SSE response
     if (typeof response.data === 'string') {
       for (const line of response.data.split('\n')) {
