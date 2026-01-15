@@ -27,7 +27,6 @@ export class AgentController {
 
   @Get('tools')
   getTools() {
-    console.log('getTools: ', this.agentService.getTools().length);
     return this.agentService.getTools();
   }
 

@@ -56,7 +56,9 @@ import * as fs from 'fs';
           tlsAllowInvalidHostnames: ENV_CONFIG.MONGO_IN_SSH_TUNNEL,
 
           // Auth Mechanism for DocumentDB Compatibility
-          authMechanism: 'SCRAM-SHA-1',
+          authMechanism: ENV_CONFIG.MONGO_IS_DOCUMENTDB
+            ? 'SCRAM-SHA-1'
+            : 'DEFAULT',
         };
 
         return opts;

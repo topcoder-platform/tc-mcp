@@ -6,7 +6,7 @@ import { createTopcoderNode } from './agents/topcoder.agent';
 import { createZayoServiceNode } from './agents/zayo-services.agent';
 import { createZayoQuoteNode } from './agents/zayo-quotes.agent';
 import { createSupervisorNode } from './agents/supervisor.agent';
-import { GraphState } from './graph-state';
+import { GraphState } from './agents/graph-state';
 
 @Injectable()
 export class LlmService implements OnModuleInit {

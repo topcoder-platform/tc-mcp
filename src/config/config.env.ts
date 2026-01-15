@@ -1,11 +1,16 @@
-import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ToBoolean } from './boolean.decorator';
 
 export class ConfigEnv {
   @Type(() => Number)
   @IsInt()
   @IsOptional()
   PORT = 3000;
+
+  @IsString()
+  @IsOptional()
+  API_BASE = '/v6/mcp';
 
   @IsString()
   TOPCODER_API_BASE_URL!: string;
@@ -31,17 +36,13 @@ export class ConfigEnv {
   @IsString()
   ZAYO_MCP_SERVER_URL: string = 'http://localhost:8012/mcp';
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
-  ZAYO_MCP_ENABLED: boolean = true;
+  @ToBoolean()
+  @IsOptional()
+  ZAYO_MCP_ENABLED = true;
 
   @IsString()
   @IsOptional()
   ZAYO_MCP_SESSION_ID?: string;
-
-  @IsString()
-  @IsOptional()
-  API_BASE = '/v6/mcp';
 
   // Azure AD Config
   @IsString()
@@ -50,13 +51,11 @@ export class ConfigEnv {
   @IsString()
   AZURE_AD_TENANT_ID!: string;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @ToBoolean()
   @IsOptional()
   IS_SAME_AZURE_AD_TENANT = false;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @ToBoolean()
   @IsOptional()
   MOCK_AZURE_AD_VALIDATION = false;
 
@@ -76,13 +75,11 @@ export class ConfigEnv {
   @IsString()
   MONGO_DB_URL!: string;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @ToBoolean()
   @IsOptional()
-  MONGO_IN_SSH_TUNNEL?: boolean = false;
+  MONGO_IN_SSH_TUNNEL = false;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @ToBoolean()
   @IsOptional()
-  MONGO_IS_DOCUMENTDB?: boolean = false;
+  MONGO_IS_DOCUMENTDB = false;
 }

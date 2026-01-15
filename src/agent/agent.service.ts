@@ -38,7 +38,7 @@ export class AgentService {
     let accumulatedOutput = '';
 
     const onClose = () => {
-      console.log(
+      this.logger.log(
         `[Server] Client disconnected for session ${sessionId}. Aborting agent execution.`,
       );
       serverAbortController.abort();
@@ -76,7 +76,7 @@ export class AgentService {
       for await (const event of stream) {
         if (res.closed) {
           if (!serverAbortController.signal.aborted) {
-            console.log(
+            this.logger.log(
               `[Server] Client disconnected for session ${sessionId}. Breaking agent loop.`,
             );
             serverAbortController.abort();
@@ -136,64 +136,7 @@ export class AgentService {
                   `Tool ${event.name} - Raw data.output: ${JSON.stringify(data.output).substring(0, 500)}`,
                 );
 
-                let toolContent = data.output;
-
-                // If output is a string that looks like JSON, try to parse it.
-                if (typeof toolContent === 'string') {
-                  try {
-                    if (
-                      toolContent.trim().startsWith('{') ||
-                      toolContent.trim().startsWith('[')
-                    ) {
-                      toolContent = JSON.parse(toolContent);
-                      this.logger.log(
-                        `Tool ${event.name} - Parsed string to object`,
-                      );
-                    }
-                  } catch (e) {
-                    this.logger.log(
-                      `Tool ${event.name} - Failed to parse: ${e.message}`,
-                    );
-                  }
-                }
-
-                // Handle Zayo MCP structure: {content: [], structuredContent: {...data...}, isError: false}
-                // OR: {content: [...], metadata: {...}, isError: false}
-                if (
-                  toolContent &&
-                  typeof toolContent === 'object' &&
-                  'isError' in toolContent
-                ) {
-                  this.logger.log(
-                    `Tool ${event.name} - Detected Zayo MCP structure`,
-                  );
-                  // Check if structuredContent exists and has data (new Zayo format)
-                  if (
-                    'structuredContent' in toolContent &&
-                    toolContent.structuredContent
-                  ) {
-                    this.logger.log(
-                      `Tool ${event.name} - Using structuredContent`,
-                    );
-                    toolContent = toolContent.structuredContent;
-                  }
-                  // Otherwise use content array (old format)
-                  else if ('content' in toolContent) {
-                    this.logger.log(`Tool ${event.name} - Using content array`);
-                    toolContent = toolContent.content;
-                  }
-                } else if (
-                  toolContent &&
-                  typeof toolContent === 'object' &&
-                  'content' in toolContent &&
-                  !('isError' in toolContent)
-                ) {
-                  // Generic MCP structure without isError (TC tools)
-                  this.logger.log(
-                    `Tool ${event.name} - Detected generic content wrapper`,
-                  );
-                  toolContent = toolContent.content;
-                }
+                const toolContent = this.parseToolContent(data, event);
 
                 this.logger.log(
                   `Tool ${event.name} - Final content type: ${typeof toolContent}, isArray: ${Array.isArray(toolContent)}`,
@@ -224,11 +167,11 @@ export class AgentService {
       }
     } catch (error: any) {
       if (error.name === 'AbortError' || error === 'Aborted') {
-        console.log(
+        this.logger.log(
           `[Server] Agent execution aborted for session ${sessionId}.`,
         );
       } else {
-        console.error('Error during agent execution:', error);
+        this.logger.error('Error during agent execution:', error);
         this.memoryService.clearCache(sessionId);
 
         if (!res.writableEnded) {
@@ -264,7 +207,9 @@ export class AgentService {
       }
     } finally {
       if (!serverAbortController.signal.aborted) {
-        console.log(`[Server] Saving conversation for session ${sessionId}.`);
+        this.logger.log(
+          `[Server] Saving conversation for session ${sessionId}.`,
+        );
 
         if (memory) {
           await memory.addUserMessage(prompt);
@@ -281,6 +226,54 @@ export class AgentService {
         res.write(`event: end\ndata: {}\n\n`);
         res.end();
       }
+    }
+  }
+
+  parseToolContent(data: any, event: any) {
+    let toolContent = data.output;
+
+    // If output is a string that looks like JSON, try to parse it.
+    if (typeof toolContent === 'string') {
+      try {
+        if (
+          toolContent.trim().startsWith('{') ||
+          toolContent.trim().startsWith('[')
+        ) {
+          toolContent = JSON.parse(toolContent);
+          this.logger.log(`Tool ${event.name} - Parsed string to object`);
+        }
+      } catch (e) {
+        this.logger.log(`Tool ${event.name} - Failed to parse: ${e.message}`);
+      }
+    }
+
+    // Handle Zayo MCP structure: {content: [], structuredContent: {...data...}, isError: false}
+    // OR: {content: [...], metadata: {...}, isError: false}
+    if (
+      toolContent &&
+      typeof toolContent === 'object' &&
+      'isError' in toolContent
+    ) {
+      this.logger.log(`Tool ${event.name} - Detected Zayo MCP structure`);
+      // Check if structuredContent exists and has data (new Zayo format)
+      if ('structuredContent' in toolContent && toolContent.structuredContent) {
+        this.logger.log(`Tool ${event.name} - Using structuredContent`);
+        toolContent = toolContent.structuredContent;
+      }
+      // Otherwise use content array (old format)
+      else if ('content' in toolContent) {
+        this.logger.log(`Tool ${event.name} - Using content array`);
+        toolContent = toolContent.content;
+      }
+    } else if (
+      toolContent &&
+      typeof toolContent === 'object' &&
+      'content' in toolContent &&
+      !('isError' in toolContent)
+    ) {
+      // Generic MCP structure without isError (TC tools)
+      this.logger.log(`Tool ${event.name} - Detected generic content wrapper`);
+      toolContent = toolContent.content;
     }
   }
 }

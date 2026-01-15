@@ -1,14 +1,9 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import fs from 'fs';
-import path from 'path';
 import axios, { AxiosInstance } from 'axios';
-// import config from "../../config/env";
-// import axiosRetry from "axios-retry";
 import { jsonSchemaToZod } from './schemaConverter';
-// import { ZodTypeAny } from "zod";
-// import toolDefinitions from "./tc-tools.json";
+import { ENV_CONFIG } from 'src/config';
 
 export interface TopcoderMcpToolDefinition {
   name: string;
@@ -22,6 +17,7 @@ export interface TopcoderMcpToolDefinition {
  */
 @Injectable()
 export class TopcoderMCPClient {
+  private readonly logger = new Logger(TopcoderMCPClient.name);
   private axiosInstance: AxiosInstance;
   private sessionToken: string;
   private mcpSessionId: string | null = null;
@@ -30,24 +26,21 @@ export class TopcoderMCPClient {
   constructor() {
     this.sessionToken = '';
     this.axiosInstance = axios.create({
-      baseURL: 'http://localhost:3000/v6/mcp/mcp',
+      baseURL: `http://localhost:${ENV_CONFIG.PORT}${ENV_CONFIG.API_BASE}/mcp`,
     });
   }
 
   @OnEvent('server.ready')
   async onServerInit(): Promise<void> {
-    console.log('TopcoderMcpClient: onServerInit called via event');
     try {
       await this.initializeSession();
       await this.refreshTools();
     } catch (e) {
-      console.error('TopcoderMCP init error:', e);
+      this.logger.error('TopcoderMCP init error:', e);
     }
   }
 
   async refreshTools(): Promise<void> {
-    console.log('TopcoderMcpClient: refreshTools called');
-
     const toolDefinitions = await this.listTools();
 
     const tools = toolDefinitions.map((toolDef) =>
@@ -60,7 +53,7 @@ export class TopcoderMCPClient {
    * Initializes the session with the MCP Gateway and retrieves a temporary mcp-session-id.
    */
   private async initializeSession(): Promise<void> {
-    console.log('Initializing MCP session...');
+    this.logger.log('Initializing MCP session...');
     const payload = {
       jsonrpc: '2.0',
       method: 'initialize',
@@ -85,7 +78,7 @@ export class TopcoderMCPClient {
       const sessionId = response.headers['mcp-session-id'];
       if (sessionId) {
         this.mcpSessionId = Array.isArray(sessionId) ? sessionId[0] : sessionId;
-        console.log(
+        this.logger.log(
           `MCP Session Initialized. Session ID: ${this.mcpSessionId}`,
         );
       } else {
@@ -94,7 +87,7 @@ export class TopcoderMCPClient {
         );
       }
     } catch (error: any) {
-      console.error(
+      this.logger.error(
         'Failed to initialize MCP session. URL:',
         this.axiosInstance.defaults.baseURL,
         'Error:',
@@ -105,7 +98,7 @@ export class TopcoderMCPClient {
         error.response?.status,
       );
       // Don't throw - allow tool listing to fail gracefully
-      console.warn('MCP initialization failed - tools will be empty');
+      this.logger.warn('MCP initialization failed - tools will be empty');
     }
   }
 
@@ -149,7 +142,7 @@ export class TopcoderMCPClient {
       await this.initializeSession();
     }
 
-    console.log(`Calling MCP tool '${toolName}' with args:`, args);
+    this.logger.log(`Calling MCP tool '${toolName}' with args:`, args);
     const payload = {
       jsonrpc: '2.0',
       method: 'tools/call',
@@ -179,7 +172,7 @@ export class TopcoderMCPClient {
 
       return parsedData?.result?.content;
     } catch (error: any) {
-      console.error(
+      this.logger.error(
         `Error calling MCP tool '${toolName}':`,
         error.response?.data || error.message,
       );
@@ -214,7 +207,7 @@ export class TopcoderMCPClient {
     if (!this.mcpSessionId) {
       await this.initializeSession();
     }
-    console.log('Listing MCP tools...');
+    this.logger.log('Listing MCP tools...');
     const payload = {
       jsonrpc: '2.0',
       method: 'tools/list',
@@ -237,11 +230,11 @@ export class TopcoderMCPClient {
         );
       }
       const tools = parsedData?.result?.tools || [];
-      console.log(`Found ${tools.length} tools from MCP Gateway.`);
+      this.logger.log(`Found ${tools.length} tools from MCP Gateway.`);
 
       return tools;
     } catch (error: any) {
-      console.error('Error listing MCP tools:', error.message);
+      this.logger.error('Error listing MCP tools:', error.message);
       return [];
     }
   }

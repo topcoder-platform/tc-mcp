@@ -47,6 +47,13 @@ export class ZayoMcpClient {
     await this.refreshToken();
     await this.initializeMcpSession();
     await this.refreshTools();
+
+    setInterval(() => {
+      this.refreshToken().catch((err) => {
+        this.logger.error('Failed to refresh MCP token', err);
+      });
+    }, 3600 * 1000);
+
   }
 
   private async refreshToken(): Promise<void> {

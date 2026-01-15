@@ -14,7 +14,7 @@ import {
   MessagesPlaceholder,
   HumanMessagePromptTemplate,
 } from '@langchain/core/prompts';
-import { GraphState } from '../graph-state';
+import { GraphState } from './graph-state';
 import { getCurrentTimeTool, getCalendarRangeTool } from '../tools/time.tools';
 
 export const createZayoServiceNode = (
