@@ -275,5 +275,7 @@ export class AgentService {
       this.logger.log(`Tool ${event.name} - Detected generic content wrapper`);
       toolContent = toolContent.content;
     }
+
+    return toolContent;
   }
 }
