@@ -57,22 +57,61 @@ export class ZayoMcpClient {
   }
 
   private async refreshToken(): Promise<void> {
-    this.logger.log('Fetching MCP token...');
-    const params = new URLSearchParams();
-    params.append('grant_type', 'client_credentials');
-    params.append('client_id', this.clientId);
-    params.append('client_secret', this.clientSecret);
+    const maxRetries = 3;
+    const baseDelayMs = 1000; // Start with 1 second
 
-    const response = await axios.post(
-      `${this.mgmtUrl}/oauth/token`,
-      params.toString(),
-      {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      },
-    );
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.log(
+          `Fetching MCP token... (attempt ${attempt}/${maxRetries})`,
+        );
 
-    this.token = response.data.access_token;
-    this.logger.log('MCP token acquired');
+        const params = new URLSearchParams();
+        params.append('grant_type', 'client_credentials');
+        params.append('client_id', this.clientId);
+        params.append('client_secret', this.clientSecret);
+
+        const response = await axios.post(
+          `${this.mgmtUrl}/oauth/token`,
+          params.toString(),
+          {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            timeout: 10000, // 10 second timeout
+          },
+        );
+
+        this.token = response.data.access_token;
+        this.logger.log('MCP token acquired successfully');
+        return; // Success - exit retry loop
+      } catch (error: any) {
+        const isLastAttempt = attempt === maxRetries;
+        const status = error.response?.status;
+        const errorMessage = error.message || 'Unknown error';
+
+        this.logger.error(
+          `Token refresh attempt ${attempt}/${maxRetries} failed: ${errorMessage}`,
+          error.response?.data,
+        );
+
+        // Don't retry on authentication errors (401, 403)
+        if (status === 401 || status === 403) {
+          this.logger.error('Authentication failed - invalid credentials');
+          throw error;
+        }
+
+        if (isLastAttempt) {
+          this.logger.error('All token refresh attempts exhausted');
+          throw error;
+        }
+
+        // Exponential backoff: 1s, 2s, 4s...
+        const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+        this.logger.warn(
+          `Retrying token refresh in ${delayMs}ms... (attempt ${attempt + 1}/${maxRetries})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
   }
 
   private async initializeMcpSession(): Promise<void> {

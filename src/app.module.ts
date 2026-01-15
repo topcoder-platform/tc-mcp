@@ -43,22 +43,23 @@ import * as fs from 'fs';
           throw new Error(`Document DB CA file not found at ${certPath}`);
         }
 
+        const isDocDB = ENV_CONFIG.MONGO_IS_DOCUMENTDB;
         const opts: MongooseModuleOptions = {
           uri: ENV_CONFIG.MONGO_DB_URL,
-          retryWrites: false,
 
-          // TLS
-          tls: ENV_CONFIG.MONGO_IS_DOCUMENTDB,
-          tlsCAFile: certPath,
-
-          // REQUIRED for DocumentDB over SSH tunnel
-          directConnection: ENV_CONFIG.MONGO_IN_SSH_TUNNEL,
-          tlsAllowInvalidHostnames: ENV_CONFIG.MONGO_IN_SSH_TUNNEL,
-
-          // Auth Mechanism for DocumentDB Compatibility
-          authMechanism: ENV_CONFIG.MONGO_IS_DOCUMENTDB
-            ? 'SCRAM-SHA-1'
-            : 'DEFAULT',
+          ...(isDocDB
+            ? {
+                retryWrites: false,
+                tls: true,
+                tlsCAFile: certPath,
+                authMechanism: 'SCRAM-SHA-1',
+                directConnection: ENV_CONFIG.MONGO_IN_SSH_TUNNEL,
+                tlsAllowInvalidHostnames: ENV_CONFIG.MONGO_IN_SSH_TUNNEL,
+              }
+            : {
+                // Atlas defaults — DO NOT override
+                retryWrites: true,
+              }),
         };
 
         return opts;
