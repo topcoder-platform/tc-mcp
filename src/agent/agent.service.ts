@@ -129,18 +129,7 @@ export class AgentService {
               event.name.length > 0
             ) {
               if (data && typeof data === 'object' && 'output' in data) {
-                this.logger.log(
-                  `Tool ${event.name} - Raw data.output type: ${typeof data.output}`,
-                );
-                this.logger.log(
-                  `Tool ${event.name} - Raw data.output: ${JSON.stringify(data.output).substring(0, 500)}`,
-                );
-
                 const toolContent = this.parseToolContent(data, event);
-
-                this.logger.log(
-                  `Tool ${event.name} - Final content type: ${typeof toolContent}, isArray: ${Array.isArray(toolContent)}`,
-                );
 
                 accumulatedOutput += ` {{${event.name}}} `;
                 tool_results.push({
@@ -230,6 +219,13 @@ export class AgentService {
   }
 
   parseToolContent(data: any, event: any) {
+    this.logger.log(
+      `Tool ${event.name} - Raw data.output type: ${typeof data.output}`,
+    );
+    this.logger.log(
+      `Tool ${event.name} - Raw data.output: ${JSON.stringify(data.output).substring(0, 500)}`,
+    );
+
     let toolContent = data.output;
 
     // If output is a string that looks like JSON, try to parse it.
@@ -275,6 +271,10 @@ export class AgentService {
       this.logger.log(`Tool ${event.name} - Detected generic content wrapper`);
       toolContent = toolContent.content;
     }
+
+    this.logger.log(
+      `Tool ${event.name} - Final content type: ${typeof toolContent}, isArray: ${Array.isArray(toolContent)}`,
+    );
 
     return toolContent;
   }
