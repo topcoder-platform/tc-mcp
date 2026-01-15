@@ -31,6 +31,7 @@ export class ConfigEnv {
   @IsString()
   ZAYO_MCP_SERVER_URL: string = 'http://localhost:8012/mcp';
 
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   ZAYO_MCP_ENABLED: boolean = true;
 
@@ -75,10 +76,12 @@ export class ConfigEnv {
   @IsString()
   MONGO_DB_URL!: string;
 
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   @IsOptional()
   MONGO_IN_SSH_TUNNEL?: boolean = false;
 
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   @IsOptional()
   MONGO_IS_DOCUMENTDB?: boolean = false;
