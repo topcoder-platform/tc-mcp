@@ -14,21 +14,36 @@ export const createSupervisorNode = () => {
   ] as const;
 
   const systemPrompt = `You are a supervisor tasked with managing a conversation between the following workers: ${members.join(', ')}. 
-Given the following user request, respond with the worker to act next. Each worker will perform a task and respond with their results and status.
-When finished, respond with FINISH.
 
-- TopcoderAgent: Handles Topcoder challenges and skills.
-- ZayoServiceAgent: Handles information about existing Zayo services, tickets, and maintenance.
-- ZayoQuoteAgent: Handles Zayo quotes, orders, and location validation.
+Your job is to route the CURRENT user request to the appropriate worker. You may see previous messages from workers in the conversation history - IGNORE those when making your routing decision. Focus ONLY on the latest user message.
 
+WORKER CAPABILITIES:
+- TopcoderAgent: Handles Topcoder challenges, skills, member information, and job postings.
+- ZayoServiceAgent: Handles information about EXISTING Zayo services, tickets, maintenance, and service status.
+- ZayoQuoteAgent: Handles NEW Zayo quotes, orders, address validation, and location checks.
 
-STRICT OUTPUT RULES:
-1. If you determine a worker needed: **IMMEDIATELY** call the \`route\` tool. **DO NOT** output any text, reasoning, or explanation before calling the tool.
-   - INCORRECT: "I need to check Topcoder skills. [Tool Call]"
-   - CORRECT: "[Tool Call]"
-2. If the user asks a general question (e.g. "What can you do?", "Who are you?"): Answer conciseley in plain text and **DO NOT** call the tool.
-3. CRITICAL: If the user asks for details about a specific domain (e.g. "Tell me about Zayo services", "Accout Topcoder", "How do quotes work?"), YOU MUST ROUTE to the appropriate worker. DO NOT answer these yourself.
-4. If the LAST message start with a Worker prefix (e.g. "[TopcoderAgent]:"): Respond with the text "FINISH" and **DO NOT** call the tool.
+ROUTING DECISION RULES (in priority order):
+1. If the LAST message is from a worker (has worker name prefix): You MUST respond with text "FINISH" and DO NOT call the route tool.
+2. If the user asks a general question about your capabilities (e.g. "What can you do?", "Who are you?"): Answer briefly in plain text and DO NOT call the route tool.
+3. For ANY domain-specific request: You MUST call the \`route\` tool with the appropriate worker.
+
+EXAMPLES OF CORRECT ROUTING:
+- "Show me zayo services" → Call route tool with ZayoServiceAgent
+- "Get topcoder challenges" → Call route tool with TopcoderAgent  
+- "I need a quote for dark fiber" → Call route tool with ZayoQuoteAgent
+- "Check ticket status for circuit ABC123" → Call route tool with ZayoServiceAgent
+- "What can you help me with?" → Respond with text (no tool call)
+
+CRITICAL OUTPUT RULES:
+1. When routing to a worker: **IMMEDIATELY** call the \`route\` tool with the \`next\` parameter. DO NOT output any text before the tool call.
+2. The \`next\` parameter is REQUIRED and MUST be one of: TopcoderAgent, ZayoServiceAgent, ZayoQuoteAgent, or FINISH.
+3. NEVER leave \`next\` undefined or empty.
+4. If uncertain which worker to use, default to the most relevant one based on keywords in the user's message.
+
+KEYWORD HINTS:
+- Topcoder keywords: challenge, skill, member, gig, job, competition
+- Zayo Service keywords: service, ticket, maintenance, status, circuit, existing, account
+- Zayo Quote keywords: quote, order, address, location, new, pricing, proposal
 `;
 
   const supervisorLlm = new ChatBedrockConverse({
@@ -39,9 +54,14 @@ STRICT OUTPUT RULES:
 
   const routeTool = {
     name: 'route',
-    description: 'Select the next role.',
+    description:
+      'Route the user request to the appropriate worker. You MUST specify which worker should handle this request in the "next" parameter.',
     schema: z.object({
-      next: z.enum([...members, 'FINISH']),
+      next: z
+        .enum([...members, 'FINISH'])
+        .describe(
+          'The worker to route to. REQUIRED. Must be one of: TopcoderAgent, ZayoServiceAgent, ZayoQuoteAgent, or FINISH',
+        ),
     }),
   };
 
@@ -55,6 +75,7 @@ STRICT OUTPUT RULES:
         lastMessage.name === 'ZayoServiceAgent' ||
         lastMessage.name === 'ZayoQuoteAgent')
     ) {
+      logger.log('[Supervisor] Last message from worker - returning FINISH');
       return { next: 'FINISH' };
     }
 
@@ -62,7 +83,7 @@ STRICT OUTPUT RULES:
     const llmWithTool = supervisorLlm.bindTools([routeTool]);
 
     // Retry loop for invalid routing
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = 3; // Increased from 2 to 3
     let attempt = 0;
     let nextDestination: string | undefined;
 
@@ -75,12 +96,20 @@ STRICT OUTPUT RULES:
 
         // If the LLM decided to answer directly (no tool call):
         if (!toolCall) {
+          logger.log(
+            '[Supervisor] No tool call - LLM answered directly, returning FINISH',
+          );
           // Return the supervisor's text response as a message
           return { messages: [response], next: 'FINISH' };
         }
 
         // Extract the next destination from tool call
         nextDestination = toolCall.args?.next;
+
+        // Log the routing decision
+        logger.log(
+          `[Supervisor] Route decision: ${nextDestination} (attempt ${attempt}/${MAX_RETRIES})`,
+        );
 
         // If valid destination found, break out of retry loop
         if (
@@ -97,29 +126,68 @@ STRICT OUTPUT RULES:
 
         // Invalid destination - log and retry
         logger.warn(
-          `[Supervisor] Attempt ${attempt}/${MAX_RETRIES}: Invalid 'next' value: ${nextDestination}`,
+          `[Supervisor] Attempt ${attempt}/${MAX_RETRIES}: Invalid 'next' value: "${nextDestination}" (type: ${typeof nextDestination})`,
         );
 
         if (attempt < MAX_RETRIES) {
-          // Add a clarification message to help the LLM
+          // Add a stronger clarification message with examples
           messages.push(
             new SystemMessage(
-              `ERROR: You must call the 'route' tool with a valid 'next' value: TopcoderAgent, ZayoServiceAgent, ZayoQuoteAgent, or FINISH. Please try again.`,
+              `ERROR: Invalid routing decision. The "next" parameter was ${nextDestination === undefined ? 'undefined' : `"${nextDestination}"`}.
+
+You MUST call the 'route' tool with a valid 'next' value from this EXACT list:
+- TopcoderAgent
+- ZayoServiceAgent  
+- ZayoQuoteAgent
+- FINISH
+
+Look at the LATEST user message and route to the appropriate worker. DO NOT leave 'next' undefined.`,
             ),
           );
         }
       } catch (error) {
         logger.error(`[Supervisor] Error on attempt ${attempt}:`, error);
         if (attempt === MAX_RETRIES) {
-          throw error; // Re-throw on final attempt
+          // On final attempt, default to FINISH instead of throwing
+          logger.error(
+            '[Supervisor] Max retries reached, defaulting to FINISH',
+          );
+          return { next: 'FINISH' };
         }
       }
     }
 
-    // All retries exhausted - default to FINISH
+    // All retries exhausted - analyze the last user message for smart default
+    const userMessages = state.messages.filter((m) => m._getType() === 'human');
+    const lastUserMessage =
+      userMessages[userMessages.length - 1]?.content
+        ?.toString()
+        .toLowerCase() || '';
+
+    let smartDefault: string = 'FINISH';
+    if (
+      lastUserMessage.includes('topcoder') ||
+      lastUserMessage.includes('challenge') ||
+      lastUserMessage.includes('skill')
+    ) {
+      smartDefault = 'TopcoderAgent';
+    } else if (
+      lastUserMessage.includes('service') ||
+      lastUserMessage.includes('ticket') ||
+      lastUserMessage.includes('maintenance')
+    ) {
+      smartDefault = 'ZayoServiceAgent';
+    } else if (
+      lastUserMessage.includes('quote') ||
+      lastUserMessage.includes('order') ||
+      lastUserMessage.includes('address')
+    ) {
+      smartDefault = 'ZayoQuoteAgent';
+    }
+
     logger.error(
-      `[Supervisor] All ${MAX_RETRIES} attempts failed. Invalid or missing 'next' value: ${nextDestination}. Defaulting to FINISH.`,
+      `[Supervisor] All ${MAX_RETRIES} attempts failed. Invalid or missing 'next' value: ${nextDestination}. Using smart default: ${smartDefault}`,
     );
-    return { next: 'FINISH' };
+    return { next: smartDefault };
   };
 };
