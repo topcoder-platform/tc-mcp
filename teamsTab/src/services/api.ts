@@ -26,6 +26,7 @@ export interface StreamMessage {
   type: 'chunk' | 'output' | 'tool_start' | 'error' | 'info' | 'tool_result';
   content: any;
   toolName?: string;
+  agentName?: string;
 }
 
 // Define the callbacks the UI can provide to handle stream events

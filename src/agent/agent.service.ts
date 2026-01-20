@@ -36,6 +36,8 @@ export class AgentService {
     const chat_history = await memory.getMessages();
     const tool_results: any[] = [];
     let accumulatedOutput = '';
+    let finalAgentName = '';
+    let hasSpecializedAgentResponded = false;
 
     const onClose = () => {
       this.logger.log(
@@ -86,9 +88,34 @@ export class AgentService {
 
         if (!event.data) continue;
         const data = event.data;
+        let shouldSuppressChunk = false;
 
         switch (event.event) {
           case 'on_chat_model_stream': {
+            if (event.metadata?.langgraph_node) {
+              const { updatedState, suppressChunk } = this.updateAgentState(
+                event.metadata.langgraph_node,
+                {
+                  accumulatedOutput,
+                  hasSpecializedAgentResponded,
+                  finalAgentName,
+                },
+              );
+
+              finalAgentName = updatedState.finalAgentName;
+              accumulatedOutput = updatedState.accumulatedOutput;
+              hasSpecializedAgentResponded =
+                updatedState.hasSpecializedAgentResponded;
+              shouldSuppressChunk = suppressChunk;
+            }
+
+            // Debug: Log all stream events to trace why Supervisor direct answers aren't arriving
+            this.logger.log(
+              `[Stream] Node: ${event.metadata?.langgraph_node}, Suppress: ${shouldSuppressChunk}, HasSpecialized: ${hasSpecializedAgentResponded}`,
+            );
+
+            if (shouldSuppressChunk) break;
+
             const chunk = event.data.chunk;
             if (
               chunk?.content &&
@@ -100,6 +127,7 @@ export class AgentService {
                 `event: message\ndata: ${JSON.stringify({
                   type: 'chunk',
                   content: chunk.content,
+                  agentName: event.metadata?.langgraph_node,
                 })}\n\n`,
               );
             }
@@ -116,6 +144,7 @@ export class AgentService {
                 `event: message\ndata: ${JSON.stringify({
                   type: 'tool_start',
                   content: event.name,
+                  agentName: event.metadata?.langgraph_node,
                 })}\n\n`,
               );
             }
@@ -140,12 +169,14 @@ export class AgentService {
                   `event: message\ndata: ${JSON.stringify({
                     type: 'chunk',
                     content: `{{${event.name}}}`,
+                    agentName: event.metadata?.langgraph_node,
                   })}\n\n`,
                 );
                 res.write(
                   `event: message\ndata: ${JSON.stringify({
                     type: 'tool_result',
                     content: tool_results,
+                    agentName: event.metadata?.langgraph_node,
                   })}\n\n`,
                 );
               }
@@ -203,7 +234,11 @@ export class AgentService {
         if (memory) {
           await memory.addUserMessage(prompt);
           await memory.addAIChatMessage(
-            JSON.stringify({ accumulatedOutput, tool_results }),
+            JSON.stringify({
+              accumulatedOutput,
+              tool_results,
+              agentName: finalAgentName,
+            }),
           );
         }
       }
@@ -277,5 +312,66 @@ export class AgentService {
     );
 
     return toolContent;
+  }
+
+  private updateAgentState(
+    currentAgent: string,
+    state: {
+      accumulatedOutput: string;
+      hasSpecializedAgentResponded: boolean;
+      finalAgentName: string;
+    },
+  ): {
+    updatedState: {
+      accumulatedOutput: string;
+      hasSpecializedAgentResponded: boolean;
+      finalAgentName: string;
+    };
+    suppressChunk: boolean;
+  } {
+    const { accumulatedOutput, hasSpecializedAgentResponded, finalAgentName } =
+      state;
+    let newAccumulatedOutput = accumulatedOutput;
+    let newHasSpecializedAgentResponded = hasSpecializedAgentResponded;
+    let newFinalAgentName = finalAgentName;
+    let shouldSuppressChunk = false;
+
+    const isSupervisor = currentAgent === 'supervisor';
+
+    if (!isSupervisor) {
+      // Specialized Agent Logic
+      if (!newHasSpecializedAgentResponded) {
+        // This is the FIRST text from a specialized agent.
+        // Clear any initial "I will check..." chatter from the Supervisor.
+        if (newAccumulatedOutput.length > 0) {
+          this.logger.log(
+            `[Server] Switching to first specialized agent ${currentAgent}. Clearing initial supervisor output.`,
+          );
+          newAccumulatedOutput = '';
+        }
+        newHasSpecializedAgentResponded = true;
+      }
+      newFinalAgentName = currentAgent;
+    } else {
+      // Supervisor Logic
+      if (newHasSpecializedAgentResponded) {
+        // If we already have a specialized response, suppress further text from Supervisor
+        // to prevent it from overwriting or diluting the specialized answer.
+        shouldSuppressChunk = true;
+      } else {
+        // Supervisor is speaking first (e.g. "Thinking..."). Allow it for now,
+        // but it will be cleared if a specialized agent takes over.
+        newFinalAgentName = currentAgent;
+      }
+    }
+
+    return {
+      updatedState: {
+        accumulatedOutput: newAccumulatedOutput,
+        hasSpecializedAgentResponded: newHasSpecializedAgentResponded,
+        finalAgentName: newFinalAgentName,
+      },
+      suppressChunk: shouldSuppressChunk,
+    };
   }
 }

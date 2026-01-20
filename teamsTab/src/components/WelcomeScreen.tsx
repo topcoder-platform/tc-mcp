@@ -416,7 +416,7 @@ export default function WelcomeScreen() {
     activeTab === 'topcoder' ? topcoderDescription : zayoDescription;
 
   const { typedText: typedDescription, isDone: isDescriptionDone } =
-    useTypingEffect(descriptionText, 10);
+    useTypingEffect(descriptionText, 1);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 50);
