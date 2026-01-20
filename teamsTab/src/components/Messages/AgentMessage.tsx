@@ -5,6 +5,8 @@ import { Text, Spinner, makeStyles, Button } from "@fluentui/react-components";
 import SkillResultCard from './Topcoder/SkillResultCard';
 import ServiceResultCard from './Zayo/ServiceResultCard';
 import TicketResultCard from './Zayo/TicketResultCard';
+import QuoteResultCard from './Zayo/QuoteResultCard';
+import LocationResultCard from './Zayo/LocationResultCard';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { ChevronUp16Filled, ChevronDown16Filled } from '@fluentui/react-icons';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -256,6 +258,23 @@ const AgentMessage: React.FC<AgentMessageProps> = ({
                 key={`tool-${toolName}-${match.index}`}
                 tickets={toolData}
                 compMaxHeight={parentHalfHeight}
+              />,
+            );
+            break;
+          case 'get_address_locations':
+            contentElements.push(
+              <LocationResultCard
+                key={`tool-${toolName}-${match.index}`}
+                data={toolData}
+                compMaxHeight={parentHalfHeight}
+              />,
+            );
+            break;
+          case 'create_ip_dia_quote':
+            contentElements.push(
+              <QuoteResultCard
+                key={`tool-${toolName}-${match.index}`}
+                data={toolData}
               />,
             );
             break;

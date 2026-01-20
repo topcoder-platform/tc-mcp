@@ -109,11 +109,6 @@ export class AgentService {
               shouldSuppressChunk = suppressChunk;
             }
 
-            // Debug: Log all stream events to trace why Supervisor direct answers aren't arriving
-            this.logger.log(
-              `[Stream] Node: ${event.metadata?.langgraph_node}, Suppress: ${shouldSuppressChunk}, HasSpecialized: ${hasSpecializedAgentResponded}`,
-            );
-
             if (shouldSuppressChunk) break;
 
             const chunk = event.data.chunk;
