@@ -10,18 +10,24 @@ import {
   AccordionPanel,
 } from '@fluentui/react-components';
 import {
-  DocumentSearch24Regular,
-  Code24Regular,
-  BranchCompare24Regular,
   Sparkle24Filled,
   ChevronRight20Regular,
-  Bot24Regular,
   Toolbox24Regular,
+  Code24Regular,
+  Globe24Regular,
 } from '@fluentui/react-icons';
 import { useChat } from '../context/ChatContext';
 import { useAuth } from '../context/AuthContext';
 import { getTools } from '../services/api';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import {
+  topcoderCapabilities,
+  topcoderDescription,
+} from './PromptExamples/TopcoderExamples';
+import {
+  zayoCapabilities,
+  zayoDescription,
+} from './PromptExamples/ZayoExamples';
 
 const useStyles = makeStyles({
   root: {
@@ -42,14 +48,12 @@ const useStyles = makeStyles({
     zIndex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: '48px',
+    gap: '24px', // No gap between tabs and content
     padding: '0 24px',
     '@media (min-width: 540px) and (max-width: 960px)': {
-      gap: '24px',
       padding: '0 12px',
     },
     '@media (max-width: 540px)': {
-      gap: '24px',
       padding: 0,
     },
   },
@@ -60,6 +64,7 @@ const useStyles = makeStyles({
     display: 'flex',
     gap: '24px',
     alignSelf: 'center',
+    marginBottom: '24px',
     // Base styles for animation
     opacity: 0,
     transform: 'translateY(10px)',
@@ -79,16 +84,71 @@ const useStyles = makeStyles({
     fontSize: '24px',
   },
 
-  headerDescription: {
-    color: tokens.colorNeutralForeground2,
-    lineHeight: '1.6',
+  // Browser Tab Styles
+  tabContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: '2px', // Small gap between tabs
+    paddingLeft: '16px',
+    marginBottom: '16px',
+    // Simulating the bottom border of the tab strip which the active tab will overlap
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     // Base styles for animation
     opacity: 0,
     transform: 'translateY(10px)',
     transitionProperty: 'opacity, transform',
     transitionDuration: '300ms',
     transitionTimingFunction: 'ease-out',
+    transitionDelay: '100ms',
+  },
+
+  tabButton: {
+    width: '64px',
+    height: '40px',
+    borderTopLeftRadius: '8px',
+    borderTopRightRadius: '8px',
+    borderBottomLeftRadius: '0px',
+    borderBottomRightRadius: '0px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    borderBottom: 'none', // We'll handle visual separation differently
+    color: tokens.colorNeutralForeground2,
+    position: 'relative',
+    top: '1px', // Push down to overlap the container border
+    transition: 'background-color 0.2s ease-out, color 0.2s ease-out',
+
+    '&:hover': {
+      // backgroundColor: tokens.colorNeutralBackground1Hover,
+      color: tokens.colorBrandForeground1,
+    },
+  },
+
+  activeTabButton: {
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderBottom: `1px solid ${tokens.colorNeutralBackground2}`, // "Erase" the border
+    color: tokens.colorBrandForeground1,
+    zIndex: 2,
+    fontWeight: 'bold',
+  },
+
+  descriptionContainer: {
+    opacity: 0,
+    transform: 'translateY(10px)',
+    transitionProperty: 'opacity, transform',
+    transitionDuration: '300ms',
+    transitionTimingFunction: 'ease-out',
     transitionDelay: '200ms',
+    position: 'relative',
+    zIndex: 1,
+  },
+
+  headerDescription: {
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '1.6',
+    margin: 0,
   },
 
   typingCursor: {
@@ -305,9 +365,15 @@ const useStyles = makeStyles({
   },
 });
 
-const useTypingEffect = (text: string, typingSpeed = 50, start = true) => {
+const useTypingEffect = (text: string, typingSpeed = 20, start = true) => {
   const [typedText, setTypedText] = useState('');
   const [isDone, setIsDone] = useState(false);
+
+  // Reset when text changes
+  useEffect(() => {
+    setTypedText('');
+    setIsDone(false);
+  }, [text]);
 
   useEffect(() => {
     if (!start || typedText.length === text.length) {
@@ -330,6 +396,8 @@ export default function WelcomeScreen() {
   const { userProfile } = useAuth();
   const { sendMessage } = useChat();
   const [visible, setVisible] = useState(false);
+  const [tabContentVisible, setTabContentVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<'topcoder' | 'zayo'>('topcoder');
   const [tools, setTools] = useState<{ name: string; description: string }[]>(
     [],
   );
@@ -342,47 +410,25 @@ export default function WelcomeScreen() {
       .catch((err) => console.error('Failed to fetch tools', err));
   }, []);
 
+  const capabilities =
+    activeTab === 'topcoder' ? topcoderCapabilities : zayoCapabilities;
   const descriptionText =
-    "I'm your AI-Powered Topcoder Assistant, I have direct access to the Topcoder platform. Leverage my tools to find challenges, analyze skills, and get data-driven insights. To get started, what aspect of Topcoder are you most interested in learning about?";
+    activeTab === 'topcoder' ? topcoderDescription : zayoDescription;
 
   const { typedText: typedDescription, isDone: isDescriptionDone } =
-    useTypingEffect(descriptionText, 1);
+    useTypingEffect(descriptionText, 10);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  const capabilities = [
-    {
-      icon: <DocumentSearch24Regular />,
-      title: 'Challenge Information',
-      description:
-        'Search for and provide details about various Topcoder challenges. Find challenges by specific criteria such as technology, skill level, or timeframe.',
-      prompt: "Find challenges with 'React' and a prize over $1000",
-    },
-    {
-      icon: <Code24Regular />,
-      title: 'Skill Exploration',
-      description:
-        'Explore the standardized skills recognized on the Topcoder platform. Understand what skills are in demand or required for specific challenges.',
-      prompt: "What skills are available related to 'AI'?",
-    },
-    {
-      icon: <BranchCompare24Regular />,
-      title: 'Comparative Reporting',
-      description:
-        'Get insights into current trends in challenges or skills on the platform. Request complex reports that require multiple tool calls to compare different sets of data.',
-      prompt: 'Compare active vs completed challenges this month',
-    },
-    {
-      icon: <Bot24Regular />,
-      title: 'Platform Guidance',
-      description:
-        'Receive general guidance about how the Topcoder platform works, including information about challenge types, participation processes, and best practices.',
-      prompt: 'How do I get started on Topcoder?',
-    },
-  ];
+  // Reset tab content animation when tab changes
+  useEffect(() => {
+    setTabContentVisible(false);
+    const timer = setTimeout(() => setTabContentVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, [activeTab]);
 
   const handleAction = (prompt: string) => sendMessage(prompt);
   const handleKeyDown = (event: React.KeyboardEvent, prompt: string) => {
@@ -417,13 +463,47 @@ export default function WelcomeScreen() {
             </Text>
           </div>
         </div>
-        <Body1
-          className={styles.headerDescription}
-          style={visible ? { opacity: 1, transform: 'translateY(0)' } : {}}
-        >
-          {typedDescription}
-          {!isDescriptionDone && <span className={styles.typingCursor} />}
-        </Body1>
+
+        {/* Browser Tabs */}
+        <div>
+          <div
+            className={styles.tabContainer}
+            style={visible ? { opacity: 1, transform: 'translateY(0)' } : {}}
+          >
+            <button
+              title="Topcoder Assistant"
+              className={`${styles.tabButton} ${activeTab === 'topcoder' ? styles.activeTabButton : ''}`}
+              onClick={() => setActiveTab('topcoder')}
+            >
+              <Code24Regular fontSize={24} />
+            </button>
+            <button
+              title="Zayo Assistant"
+              className={`${styles.tabButton} ${activeTab === 'zayo' ? styles.activeTabButton : ''}`}
+              onClick={() => setActiveTab('zayo')}
+            >
+              <Globe24Regular fontSize={24} />
+            </button>
+          </div>
+
+          <div
+            className={styles.descriptionContainer}
+            style={
+              tabContentVisible
+                ? { opacity: 1, transform: 'translateY(0)' }
+                : {
+                    transition: 'none',
+                    opacity: 0,
+                    transform: 'translateY(10px)',
+                  }
+            }
+          >
+            <Body1 className={styles.headerDescription}>
+              {typedDescription}
+              {!isDescriptionDone && <span className={styles.typingCursor} />}
+            </Body1>
+          </div>
+        </div>
       </div>
 
       <div className={styles.capabilitiesGrid}>
@@ -432,13 +512,17 @@ export default function WelcomeScreen() {
             key={index}
             className={styles.capabilityCard}
             style={
-              visible
+              tabContentVisible
                 ? {
                     opacity: 1,
                     transform: 'translateY(0)',
-                    transitionDelay: `${500 + index * 100}ms`, // Staggered delay
+                    transitionDelay: `${300 + index * 100}ms`, // Staggered delay, reduced base delay
                   }
-                : {}
+                : {
+                    transition: 'none',
+                    opacity: 0,
+                    transform: 'translateY(20px)',
+                  }
             }
             tabIndex={0}
             aria-label={`${capability.title}: ${capability.description}`}

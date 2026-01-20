@@ -15,11 +15,11 @@ import {
   Button,
 } from "@fluentui/react-components";
 import { bundleIcon, Open20Filled, Open20Regular, SearchInfo24Regular } from "@fluentui/react-icons";
-import { useChat } from "../../context/ChatContext";
+import { useChat } from "../../../context/ChatContext";
 import ChallengeDetailsView from "./ChallengeDetailsView";
 import SkillBadge from "./SkillBadge";
-import EmptyState from "./EmptyState";
-import { useViewport } from "../../hooks/useViewport"; // Import the viewport hook
+import EmptyState from "../EmptyState";
+import { useViewport } from "../../../hooks/useViewport"; // Import the viewport hook
 
 const useStyles = makeStyles({
   card: {

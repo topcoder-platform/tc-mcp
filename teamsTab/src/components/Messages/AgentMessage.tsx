@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { type AgentStatus, type Message } from "../../hooks/useChat";
-import ChallengeResultCard from "./ChallengeResultCard";
+import ChallengeResultCard from './Topcoder/ChallengeResultCard';
 import { Text, Spinner, makeStyles, Button } from "@fluentui/react-components";
-import SkillResultCard from "./SkillResultCard";
-import ServiceResultCard from './ServiceResultCard';
-import TicketResultCard from './TicketResultCard';
+import SkillResultCard from './Topcoder/SkillResultCard';
+import ServiceResultCard from './Zayo/ServiceResultCard';
+import TicketResultCard from './Zayo/TicketResultCard';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { ChevronUp16Filled, ChevronDown16Filled } from '@fluentui/react-icons';
 import { ErrorBoundary } from 'react-error-boundary';
