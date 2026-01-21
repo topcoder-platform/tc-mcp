@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import { app, authentication } from "@microsoft/teams-js";
 import { v4 as uuidv4 } from "uuid";
 import { jwtDecode } from "jwt-decode";
+import { config } from '../config';
 
 interface UserProfile {
   name: string;
@@ -28,8 +29,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const mockSsoToken = import.meta.env.VITE_MOCK_VALIDATE_TOKEN === "true";
-  const isTeamsTab = import.meta.env.VITE_IS_NOT_TEAMS_TAB !== "true";
+  const { isTeamsTab, mockAzureADtoken: mockSsoToken } = config;
 
   const processToken = (token?: string | null) => {
     if (!token) {
