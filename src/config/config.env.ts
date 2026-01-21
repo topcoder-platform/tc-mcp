@@ -61,10 +61,12 @@ export class ConfigEnv {
 
   // LLM for Agent
   @IsString()
-  AWS_ACCESS_KEY_ID!: string;
+  @IsOptional()
+  AWS_ACCESS_KEY_ID?: string;
 
   @IsString()
-  AWS_SECRET_ACCESS_KEY!: string;
+  @IsOptional()
+  AWS_SECRET_ACCESS_KEY?: string;
 
   @IsString()
   AWS_BEDROCK_REGION = 'us-east-1';
