@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { app } from '@microsoft/teams-js';
 import { type BrandVariants } from "@fluentui/react-components";
+import { config } from '../config';
 
 const brandRamp: BrandVariants = {
   10: "#04131b", // darkest
@@ -24,8 +25,8 @@ const brandRamp: BrandVariants = {
 export function useTeamsTheme() {
   const [theme, setTheme] = useState<"light" | "dark" | "contrast">("light");
   const [isInitialized, setIsInitialized] = useState(false);
+  const { isTeamsTab } = config;
 
-  const isTeamsTab = import.meta.env.VITE_IS_NOT_TEAMS_TAB !== "true";
   if (!isTeamsTab) return { theme, isInitialized: true, brandRamp };
 
   useEffect(() => {

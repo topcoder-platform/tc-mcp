@@ -5,13 +5,14 @@ import { useAuth } from "../context/AuthContext";
 
 export interface Message {
   id: string;
-  author: "user" | "bot" | "system";
+  author: 'user' | 'bot' | 'system';
   content: string;
+  agentName?: string;
   toolResults?: [
     {
       toolName: string;
       data: any;
-    }
+    },
   ];
 }
 
@@ -72,7 +73,22 @@ export const useChatProvider = () => {
               setAgentStatus("streaming_text");
               setStreamingMessage((prev) => {
                 if (prev && prev.id === botMessagePlaceholder.id) {
-                  return { ...prev, content: prev.content + streamMsg.content };
+                  const prevAgent = prev.agentName;
+                  const newAgent = streamMsg.agentName;
+
+                  // Add line break when switching from supervisor to a specialized agent
+                  const shouldAddLineBreak =
+                    prevAgent === 'supervisor' &&
+                    newAgent &&
+                    newAgent !== 'supervisor';
+
+                  return {
+                    ...prev,
+                    content: shouldAddLineBreak
+                      ? prev.content + '\n\n' + streamMsg.content
+                      : prev.content + streamMsg.content,
+                    agentName: newAgent || prevAgent,
+                  };
                 }
                 return prev;
               });

@@ -1,8 +1,8 @@
 import React from 'react';
 import { makeStyles, shorthands, Title3, Subtitle2, Link, Divider } from "@fluentui/react-components";
 import { Link20Color, Trophy20Regular } from "@fluentui/react-icons";
-import { MarkdownRenderer } from "../MarkdownRenderer";
-import SkillBadge from "./SkillBadge";
+import { MarkdownRenderer } from "../../MarkdownRenderer";
+import SkillBadge from './SkillBadge';
 
 const useStyles = makeStyles({
   root: {

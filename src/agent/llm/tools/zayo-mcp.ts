@@ -271,27 +271,44 @@ export class ZayoMcpClient {
       } catch (error: any) {
         const isLastAttempt = attempt === maxRetries;
         const status = error.response?.status;
+        const responseData = error.response?.data;
 
-        // Check for 502 Bad Gateway (Cold Start) - retry
+        // Check for 502 Bad Gateway (Cold Start) - reinitialize session and retry
         if (status === 502 && !isLastAttempt) {
           this.logger.warn(
-            `Received 502 Bad Gateway from MCP server. Server might be waking up (Cold Start). Retrying attempt ${attempt}/${maxRetries} in ${retryDelay}ms...`,
+            `Received 502 Bad Gateway from MCP server. Server might be waking up (Cold Start). Reinitializing session and retrying attempt ${attempt}/${maxRetries} in ${retryDelay}ms...`,
           );
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
+
+          // Clear old session and reinitialize
+          this.sessionId = undefined;
+          this.isInitialized = false;
+          await this.initializeMcpSession();
           continue;
         }
 
-        // Check for 400 with session error - might need to reinitialize
-        if (status === 400 && error.response?.data?.includes?.('session')) {
+        // Check for 400 with session error - reinitialize session and retry
+        const isSessionError =
+          status === 400 &&
+          (typeof responseData === 'string'
+            ? responseData.includes('session')
+            : JSON.stringify(responseData).includes('session'));
+
+        if (isSessionError && !isLastAttempt) {
           this.logger.warn(
-            `Session error detected (${error.response.data}). May need to reinitialize session.`,
+            `Session error detected (${responseData}). Reinitializing session and retrying attempt ${attempt}/${maxRetries}...`,
           );
+
+          // Clear old session and reinitialize
+          this.sessionId = undefined;
+          this.isInitialized = false;
+          await this.initializeMcpSession();
+          continue;
         }
 
         // For other errors or last attempt, log and throw
         if (axios.isAxiosError(error)) {
           const errorMsg = error.message || 'Unknown error';
-          const responseData = error.response?.data;
 
           // Truncate large error responses
           let truncatedData = '';
