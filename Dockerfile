@@ -10,13 +10,9 @@ RUN curl -o /tmp/global-bundle.pem https://truststore.pki.rds.amazonaws.com/glob
 
 # Declare ARGs to receive the variables from build command.
 # Auto assigns from environment variables configured at CI/CD
-ARG VITE_API_BASE_URL
-ARG VITE_IS_NOT_TEAMS_TAB
-ARG VITE_MOCK_VALIDATE_TOKEN
-
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_IS_NOT_TEAMS_TAB=$VITE_IS_NOT_TEAMS_TAB
-ENV VITE_MOCK_VALIDATE_TOKEN=$VITE_MOCK_VALIDATE_TOKEN
+ARG VITE_AGENT_API_URL
+ARG VITE_IS_TEAMS_TAB
+ARG VITE_MOCK_AZURE_AD_TOKEN
 
 WORKDIR /app
 COPY . .
