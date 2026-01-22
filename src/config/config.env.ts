@@ -1,11 +1,16 @@
-import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ToBoolean } from './boolean.decorator';
 
 export class ConfigEnv {
   @Type(() => Number)
   @IsInt()
   @IsOptional()
   PORT = 3000;
+
+  @IsString()
+  @IsOptional()
+  API_BASE = '/v6/mcp';
 
   @IsString()
   TOPCODER_API_BASE_URL!: string;
@@ -20,8 +25,24 @@ export class ConfigEnv {
   AUTH0_CLIENT_ID!: string;
 
   @IsString()
+  ZAYO_MCP_MGMT_URL!: string;
+
+  @IsString()
+  ZAYO_MCP_CLIENT_ID!: string;
+
+  @IsString()
+  ZAYO_MCP_CLIENT_SECRET!: string;
+
+  @IsString()
+  ZAYO_MCP_SERVER_URL: string = 'http://localhost:8012/mcp';
+
+  @ToBoolean()
   @IsOptional()
-  API_BASE = '/v6/mcp';
+  ZAYO_MCP_ENABLED = true;
+
+  @IsString()
+  @IsOptional()
+  ZAYO_MCP_SESSION_ID?: string;
 
   // Azure AD Config
   @IsString()
@@ -30,22 +51,22 @@ export class ConfigEnv {
   @IsString()
   AZURE_AD_TENANT_ID!: string;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @ToBoolean()
   @IsOptional()
   IS_SAME_AZURE_AD_TENANT = false;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @ToBoolean()
   @IsOptional()
   MOCK_AZURE_AD_VALIDATION = false;
 
   // LLM for Agent
   @IsString()
-  AWS_ACCESS_KEY_ID!: string;
+  @IsOptional()
+  AWS_ACCESS_KEY_ID?: string;
 
   @IsString()
-  AWS_SECRET_ACCESS_KEY!: string;
+  @IsOptional()
+  AWS_SECRET_ACCESS_KEY?: string;
 
   @IsString()
   AWS_BEDROCK_REGION = 'us-east-1';
@@ -55,4 +76,12 @@ export class ConfigEnv {
 
   @IsString()
   MONGO_DB_URL!: string;
+
+  @ToBoolean()
+  @IsOptional()
+  MONGO_IN_SSH_TUNNEL = false;
+
+  @ToBoolean()
+  @IsOptional()
+  MONGO_IS_DOCUMENTDB = false;
 }

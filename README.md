@@ -80,7 +80,7 @@ Frontend will run at `http://localhost:5173/teamsTab`.
 
 ---
 
-### Step 4: Expose Local Servers for Teams
+### Step 4: Expose Local Servers for MS Teams
 
 To test inside Teams, both servers must be public. It's best to get static url from ngrok for frontend, So we can setup Azure AD, MS Teams app with this static url once, and also prefer to take static url for backend too.
 
@@ -98,8 +98,7 @@ You’ll get two public URLs:
 
 > **Note:**
 > * ngrok frontend url should be added to `teamsTab\vite.config.ts` allowed hosts for development environment.
-> * ngrok backend url should be added to `.env` for `VITE_API_BASE_URL` development
-- Example: `VITE_API_BASE_URL=https://<backend-id>.ngrok-free.app/v6/mcp/agent`
+> * ngrok backend url should be configured in `teamsTab/src/config/local.ts` (or `dev.ts` if using dev mode) as `apiBaseUrl`.
 
 ---
 
@@ -153,16 +152,12 @@ docker run -d -p 3000:3000 teams-ai-agent
 ```
 
 > **Note:**
-> * Configure environment variables **directly in your hosting platform’s dashboard**, such as **Railway**, **AWS ECS / Lightsail**, or **Render** — no `.env` file needed.
-> * Most CI/CD platforms automatically include environment variables for required build arguments when running the Docker build.
+> * Configure environment variables **directly in your hosting platform’s dashboard**, such as **Railway**, **AWS ECS / Lightsail**, or **Render** for the Backend.
+> * Frontend configuration is now handled via `teamsTab/src/config/*.ts` files which are bundled at build time. Ensure you build with the correct mode (e.g., `npm run build:prod`).
 >
-> - For example, the build command would be like:
->   `docker build --build-arg VITE_API_BASE_URL="https://api.topcoder.com/v6/mcp/agent" -t teams-ai-agent .`
-> 
 > *
 > **💡 Note:**
-> * Local docker build will use root .env since it is not added to `.dockerignore`, 
-> * So no need to pass VITE_API_BASE_URL as Arg at `docker build -t teams-ai-agent .`
+> * Local docker build will use root .env since it is not added to `.dockerignore`
 
 ---
 

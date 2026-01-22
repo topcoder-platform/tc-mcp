@@ -1,6 +1,9 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+import { config } from '../config';
+
+const API_BASE_URL = config.apiBaseUrl;
+
 
 export interface ConversationHistoryItem {
   sessionId: string;
@@ -17,10 +20,16 @@ export interface FullConversation {
   }[];
 }
 
+export interface Tool {
+  name: string;
+  description: string;
+}
+
 export interface StreamMessage {
-  type: "chunk" | "output" | "tool_start" | "error" | "info" | "tool_result";
+  type: 'chunk' | 'output' | 'tool_start' | 'error' | 'info' | 'tool_result';
   content: any;
   toolName?: string;
+  agentName?: string;
 }
 
 // Define the callbacks the UI can provide to handle stream events
@@ -45,22 +54,22 @@ export async function streamChat(
   ssoToken: string,
   sessionId: string | null,
   callbacks: StreamCallbacks,
-  abortSignal: AbortSignal
+  abortSignal: AbortSignal,
 ): Promise<void> {
   const internalAbortController = new AbortController();
   if (abortSignal.aborted) {
     return; // Don't even start if the signal is already aborted
   }
   const onAbort = () => internalAbortController.abort();
-  abortSignal.addEventListener("abort", onAbort);
+  abortSignal.addEventListener('abort', onAbort);
 
   let streamEndedGracefully = false;
 
   try {
     await fetchEventSource(`${API_BASE_URL}/chat`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${ssoToken}`,
       },
       body: JSON.stringify({ prompt, sessionId }),
@@ -70,26 +79,26 @@ export async function streamChat(
       // This is the main callback that handles incoming messages
       onmessage(ev) {
         // The server sent the 'end' event, so we can stop gracefully
-        if (ev.event === "end") {
+        if (ev.event === 'end') {
           streamEndedGracefully = true;
-          internalAbortController.abort("Stream ended");
+          internalAbortController.abort('Stream ended');
           callbacks.onEnd();
           return;
         }
 
-        if (ev.event === "error") {
+        if (ev.event === 'error') {
           const data = JSON.parse(ev.data);
           callbacks.onError(new Error(data.content));
           return;
         }
 
-        if (ev.event === "session_start") {
+        if (ev.event === 'session_start') {
           const data = JSON.parse(ev.data);
           callbacks.onSessionStart(data.sessionId);
           return;
         }
 
-        if (ev.event === "message") {
+        if (ev.event === 'message') {
           const data = JSON.parse(ev.data);
           callbacks.onMessage(data as StreamMessage);
           return;
@@ -97,11 +106,13 @@ export async function streamChat(
       },
 
       onclose() {
-        console.log("Connection closed.");
+        console.log('Connection closed.');
         // If the stream did not end gracefully (no 'end' event), and the user
         // did not manually abort, then it was an unexpected server-side closure.
         if (!streamEndedGracefully && !abortSignal.aborted) {
-          callbacks.onError(new Error("Connection closed unexpectedly. Please try again."));
+          callbacks.onError(
+            new Error('Connection closed unexpectedly. Please try again.'),
+          );
         }
         callbacks.onEnd();
         return;
@@ -117,13 +128,13 @@ export async function streamChat(
       },
     });
   } catch (err: any) {
-    if (err.name !== "AbortError") {
-      console.error("fetchEventSource failed:", err);
+    if (err.name !== 'AbortError') {
+      console.error('fetchEventSource failed:', err);
     } else {
       console.log("Stream aborted by user signal or server 'end' event.");
     }
   } finally {
-    abortSignal.removeEventListener("abort", onAbort);
+    abortSignal.removeEventListener('abort', onAbort);
   }
 }
 
@@ -134,19 +145,25 @@ export async function streamChat(
  * @param search Optional search term.
  * @returns A promise that resolves to an array of history items.
  */
-export async function getHistory(ssoToken: string, filter?: string, search?: string): Promise<ConversationHistoryItem[]> {
+export async function getHistory(
+  ssoToken: string,
+  filter?: string,
+  search?: string,
+): Promise<ConversationHistoryItem[]> {
   const params = new URLSearchParams();
-  if (filter) params.append("filter", filter);
-  if (search) params.append("search", search);
+  if (filter) params.append('filter', filter);
+  if (search) params.append('search', search);
 
   const response = await fetch(`${API_BASE_URL}/history?${params.toString()}`, {
-    method: "GET",
+    method: 'GET',
     headers: { Authorization: `Bearer ${ssoToken}` },
   });
 
   if (!response.ok) {
     const errorBody = await response.json();
-    throw new Error(errorBody.message || `Request failed with status ${response.status}`);
+    throw new Error(
+      errorBody.message || `Request failed with status ${response.status}`,
+    );
   }
   return response.json();
 }
@@ -158,16 +175,40 @@ export async function getHistory(ssoToken: string, filter?: string, search?: str
  * @param signal An AbortSignal to allow for cancelling the request.
  * @returns A promise that resolves to the full conversation object.
  */
-export async function getConversationDetails(ssoToken: string, sessionId: string, signal: AbortSignal): Promise<FullConversation> {
+export async function getConversationDetails(
+  ssoToken: string,
+  sessionId: string,
+  signal: AbortSignal,
+): Promise<FullConversation> {
   const response = await fetch(`${API_BASE_URL}/history/${sessionId}`, {
-    method: "GET",
+    method: 'GET',
     headers: { Authorization: `Bearer ${ssoToken}` },
     signal,
   });
 
   if (!response.ok) {
     const errorBody = await response.json();
-    throw new Error(errorBody.message || `Request failed with status ${response.status}`);
+    throw new Error(
+      errorBody.message || `Request failed with status ${response.status}`,
+    );
+  }
+  return response.json();
+}
+
+/**
+ * Fetches the list of available tools.
+ * @returns A promise that resolves to an array of Tool objects.
+ */
+export async function getTools(): Promise<Tool[]> {
+  const response = await fetch(`${API_BASE_URL}/tools`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch tools: ${response.statusText}`);
   }
   return response.json();
 }

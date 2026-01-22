@@ -4,6 +4,7 @@ import { useChatProvider, type AgentStatus, type Message } from "../hooks/useCha
 import { getConversationDetails } from "../services/api";
 import { useAuth } from "./AuthContext";
 import { pages } from "@microsoft/teams-js";
+import { config } from '../config';
 
 interface LoadError {
   sessionId: string;
@@ -70,7 +71,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [sheetContent, setSheetContent] = useState<React.ReactNode | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
-  const isTeamsTab = import.meta.env.VITE_IS_NOT_TEAMS_TAB !== "true";
+  const { isTeamsTab } = config;
 
   const dataFetchControllerRef = useRef<AbortController | null>(null);
   const activeFetchIdRef = useRef<string | null>(null);

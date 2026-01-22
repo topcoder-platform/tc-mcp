@@ -1,16 +1,20 @@
 import { BaseChatMessageHistory } from "@langchain/core/chat_history";
 import { AIMessage, BaseMessage, HumanMessage, mapChatMessagesToStoredMessages, ToolMessage } from "@langchain/core/messages";
+import { Logger } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { ConversationDocument } from "../models/conversation.schema";
-
+import { ConversationDocument } from '../models/conversation.schema';
 
 /**
  * A Chat History class that interacts directly with MongoDB.
  */
 export class MongoDBChatHistory extends BaseChatMessageHistory {
-  lc_namespace = ["langchain", "stores", "message", "mongodb"];
+  lc_namespace = ['langchain', 'stores', 'message', 'mongodb'];
 
-  constructor(private sessionId: string, private userId: string, private conversationModel: Model<ConversationDocument>) {
+  constructor(
+    private sessionId: string,
+    private userId: string,
+    private conversationModel: Model<ConversationDocument>,
+  ) {
     super();
   }
 
@@ -20,13 +24,15 @@ export class MongoDBChatHistory extends BaseChatMessageHistory {
       userId: this.userId,
     });
 
-    return conversation ? mapDbMessagesToLangChainMessages(conversation.messages) : [];
+    return conversation
+      ? mapDbMessagesToLangChainMessages(conversation.messages)
+      : [];
   }
 
   async addMessage(message: BaseMessage): Promise<void> {
     const storedMessage = mapChatMessagesToStoredMessages([message])[0];
     const dbMessage = {
-      author: storedMessage.type === "human" ? "user" : "bot",
+      author: storedMessage.type === 'human' ? 'user' : 'bot',
       content: storedMessage.data.content,
       timestamp: new Date(),
     };
@@ -37,7 +43,7 @@ export class MongoDBChatHistory extends BaseChatMessageHistory {
         $push: { messages: dbMessage },
         $set: { userId: this.userId },
       },
-      { upsert: true }
+      { upsert: true },
     );
   }
 
@@ -58,7 +64,8 @@ export class MongoDBChatHistory extends BaseChatMessageHistory {
  * A wrapper class that adds an in-memory cache layer on top of a primary Chat History store.
  */
 export class CachedChatHistory extends BaseChatMessageHistory {
-  lc_namespace = ["app", "stores", "message", "cached"];
+  lc_namespace = ['app', 'stores', 'message', 'cached'];
+  private readonly logger = new Logger('CachedChatHistory');
   private cache: BaseMessage[] | null = null;
   private dbHistory: MongoDBChatHistory; // Specifically typed for clarity
 
@@ -69,11 +76,9 @@ export class CachedChatHistory extends BaseChatMessageHistory {
 
   async getMessages(): Promise<BaseMessage[]> {
     if (this.cache) {
-      console.log(`Cache HIT for session. Returning ${this.cache.length} messages from memory.`);
       return this.cache;
     }
 
-    console.log(`Cache MISS for session. Fetching from database...`);
     const messages = await this.dbHistory.getMessages();
     this.cache = messages;
     return messages;
@@ -107,7 +112,7 @@ export class CachedChatHistory extends BaseChatMessageHistory {
     // for the in-memory cache, which the agent will use for the next turn.
     const cleanMessages = mapDbMessagesToLangChainMessages([
       {
-        author: "bot",
+        author: 'bot',
         content: message,
       },
     ]);
@@ -128,22 +133,30 @@ export class CachedChatHistory extends BaseChatMessageHistory {
  * @returns An array of BaseMessage objects.
  */
 function mapDbMessagesToLangChainMessages(messages: any[]): BaseMessage[] {
+  const logger = new Logger('mapDbMessagesToLangChainMessages');
   const result: BaseMessage[] = [];
 
   if (messages.length > 10) {
-    console.log(`Original messages length: ${messages.length}. Slicing to latest 10.`);
+    logger.log(
+      `Original messages length: ${messages.length}. Slicing to latest 10.`,
+    );
     messages = messages.slice(-10);
   }
 
   for (const [index, msg] of messages.entries()) {
-    if (msg.author === "user") {
+    if (msg.author === 'user') {
       result.push(new HumanMessage(msg.content));
-    } else if (msg.author === "bot") {
+    } else if (msg.author === 'bot') {
       try {
         const parsedContent = JSON.parse(msg.content);
 
-        if (parsedContent && typeof parsedContent.accumulatedOutput === "string") {
-          const aiResponseMessage = new AIMessage(parsedContent.accumulatedOutput.replace(/{{.*?}}/g, "").trim());
+        if (
+          parsedContent &&
+          typeof parsedContent.accumulatedOutput === 'string'
+        ) {
+          const aiResponseMessage = new AIMessage(
+            parsedContent.accumulatedOutput.replace(/{{.*?}}/g, '').trim(),
+          );
           const toolMessages: ToolMessage[] = [];
           const toolCallsForAiMessage: any[] = [];
 
@@ -220,7 +233,11 @@ function parseToolDataForLLM(toolResult: any, messageIndex: number): { toolCallF
 
     return { toolCallForAiMessage, toolMessage };
   } catch (e) {
-    console.error(`Skipping malformed tool result in history for message ${messageIndex}:`, e);
+    const logger = new Logger('parseToolDataForLLM');
+    logger.error(
+      `Skipping malformed tool result in history for message ${messageIndex}:`,
+      e,
+    );
     return null;
   }
 }

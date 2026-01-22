@@ -1,34 +1,65 @@
-import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
-import { buildAgentPrompt } from './prompts';
-import { TopcoderMCPClient } from './tc-mcp';
-import { ChatBedrockConverse } from '@langchain/aws';
-import { ENV_CONFIG } from 'src/config';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { StateGraph, START, END } from '@langchain/langgraph';
+import { createTopcoderNode } from './agents/topcoder.agent';
+import { createZayoServiceNode } from './agents/zayo-services.agent';
+import { createZayoQuoteNode } from './agents/zayo-quotes.agent';
+import { createSupervisorNode } from './agents/supervisor.agent';
+import { GraphState } from './agents/graph-state';
+import { TopcoderMCPClient } from './tools/tc-mcp';
+import { ZayoMcpClient } from './tools/zayo-mcp';
 
-/**
- * Creates a new conversational agent instance for a specific user.
- * This function is called for each incoming request.
- * @param userId The unique ID of the user making the request.
- * @returns A fully configured runnable agent chain with memory.
- */
 @Injectable()
-export class LlmService {
-  constructor(private readonly tcMcpClient: TopcoderMCPClient) {}
+export class LlmService implements OnModuleInit {
+  private readonly logger = new Logger(LlmService.name);
 
-  createConversationalAgent(userId: string) {
-    const tools = this.tcMcpClient.getTools();
-    const prompt = buildAgentPrompt();
+  constructor(
+    private readonly tcMcpClient: TopcoderMCPClient,
+    private readonly zayoMcpClient: ZayoMcpClient,
+  ) {}
 
-    const llm = new ChatBedrockConverse({
-      region: ENV_CONFIG.AWS_BEDROCK_REGION,
-      model: ENV_CONFIG.AWS_BEDROCK_MODEL_ID,
+  async onModuleInit() {}
 
-      streaming: true,
-    }).bindTools(tools);
+  async createConversationalAgent(userId: string) {
+    const tcTools = this.tcMcpClient.getTools();
+    const zayoServiceTools = this.zayoMcpClient.getServiceTools();
+    const zayoQuoteTools = this.zayoMcpClient.getQuoteTools();
 
-    const agent = createToolCallingAgent({ llm, tools, prompt });
-    const agentExecutor = new AgentExecutor({ agent, tools });
+    // 1. Create Nodes
+    const topcoderNode = createTopcoderNode(tcTools);
+    const zayoServiceNode = createZayoServiceNode(zayoServiceTools);
+    const zayoQuoteNode = createZayoQuoteNode(zayoQuoteTools);
+    const supervisorNode = createSupervisorNode();
 
-    return agentExecutor;
+    // 2. Build Graph
+    const workflow = new StateGraph(GraphState)
+      .addNode('supervisor', supervisorNode)
+      .addNode('TopcoderAgent', topcoderNode)
+      .addNode('ZayoServiceAgent', zayoServiceNode)
+      .addNode('ZayoQuoteAgent', zayoQuoteNode);
+
+    const members = [
+      'TopcoderAgent',
+      'ZayoServiceAgent',
+      'ZayoQuoteAgent',
+    ] as const;
+
+    members.forEach((member) => {
+      workflow.addEdge(member, 'supervisor');
+    });
+
+    workflow.addEdge(START, 'supervisor');
+
+    workflow.addConditionalEdges('supervisor', (x: any) => x.next, {
+      TopcoderAgent: 'TopcoderAgent',
+      ZayoServiceAgent: 'ZayoServiceAgent',
+      ZayoQuoteAgent: 'ZayoQuoteAgent',
+      FINISH: END,
+    });
+
+    return workflow.compile();
+  }
+
+  getTools() {
+    return [...this.tcMcpClient.getTools(), ...this.zayoMcpClient.getTools()];
   }
 }

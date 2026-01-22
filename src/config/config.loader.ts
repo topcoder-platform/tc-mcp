@@ -5,6 +5,7 @@ import { ConfigEnv } from './config.env';
 import { Logger } from 'src/shared/global';
 
 const logger = new Logger('ENV_CONFIG');
+dotenv.config();
 
 /**
  * Loads and validates environment variables into a `ConfigEnv` instance.
@@ -47,5 +48,4 @@ function loadAndValidateEnv(): ConfigEnv {
   return env;
 }
 
-dotenv.config();
 export const ENV_CONFIG = loadAndValidateEnv();

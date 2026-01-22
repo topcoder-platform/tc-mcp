@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Card, makeStyles, shorthands, Text, mergeClasses, tokens } from "@fluentui/react-components";
 import { ChevronDown16Regular, ChevronUp16Regular, TagSearch20Regular } from "@fluentui/react-icons";
-import EmptyState from "./EmptyState";
+import EmptyState from "../EmptyState";
 import SkillBadge from "./SkillBadge";
-import { useViewport } from "../../hooks/useViewport";
+import { useViewport } from "../../../hooks/useViewport";
 
 const useStyles = makeStyles({
   card: {
