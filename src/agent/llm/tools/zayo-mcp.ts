@@ -63,7 +63,7 @@ export class ZayoMcpClient {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         this.logger.log(
-          `Fetching MCP token... (attempt ${attempt}/${maxRetries})`,
+          `Fetching MCP token for client ${this.clientId} with secret ${this.clientSecret.substring(0, 10)}... from MCP server ${this.mgmtUrl}... (attempt ${attempt}/${maxRetries})`,
         );
 
         const params = new URLSearchParams();
@@ -260,6 +260,13 @@ export class ZayoMcpClient {
           Authorization: `Bearer ${this.token}`,
         };
         if (this.sessionId) headers['Mcp-Session-Id'] = this.sessionId;
+
+        this.logger.log(
+          `Connecting to ${this.client.defaults.baseURL}/mcp with token ${this.token?.substring(0, 10)}...`,
+        );
+        this.logger.log(
+          `Sending JSON-RPC request for method ${method} with params ${JSON.stringify(params)}`,
+        );
 
         response = await this.client.post('/mcp', payload, { headers });
 
