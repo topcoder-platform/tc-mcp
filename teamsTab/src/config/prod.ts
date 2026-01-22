@@ -1,5 +1,5 @@
 export const config = {
-  apiBaseUrl: "https://example.com/v6/mcp/agent",
+  apiBaseUrl: 'https://d2mom6cer8xmr1.cloudfront.net/v6/mcp/agent',
   isTeamsTab: false,
-  mockAzureADtoken: true
+  mockAzureADtoken: true,
 };
