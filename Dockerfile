@@ -11,4 +11,6 @@ RUN npm install pnpm -g
 RUN pnpm install
 RUN pnpm run build
 RUN chmod +x appStartUp.sh
+RUN chown -R node:node /app
+USER node
 CMD ./appStartUp.sh
